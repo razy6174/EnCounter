@@ -155,7 +155,7 @@ fun RadarScreen(
                 Text(
                     text = when {
                         !uiState.isBluetoothEnabled -> "⚠️ Bluetoothをオンにしてください"
-                        uiState.isScanning -> "🔍 スキャン中..."
+                        uiState.isEncounterActive -> "🔍 すれ違い通信中..."
                         else -> "待機中"
                     },
                     style = MaterialTheme.typography.bodyLarge
@@ -166,23 +166,13 @@ fun RadarScreen(
                 // ========================================
                 // 🔒 久米実装: ボタンのonClickは変更禁止
                 // ✏️ 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
+                // すれ違い通信ボタン（スキャン+アドバタイズ同時実行）
                 // ========================================
                 Button(
-                    onClick = { viewModel.toggleScanning() }  // 🔒 変更禁止
+                    onClick = { viewModel.toggleEncounter() }  // 🔒 変更禁止
                 ) {
                     // TODO: 昆野 - ボタンデザインを改善（アイコン追加など）
-                    Text(if (uiState.isScanning) "スキャン停止" else "スキャン開始")
-                }
-                
-                // ========================================
-                // 🔒 久米実装: ボタンのonClickは変更禁止
-                // ✏️ 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
-                // ========================================
-                Button(
-                    onClick = { viewModel.toggleAdvertising() }  // 🔒 変更禁止
-                ) {
-                    // TODO: 昆野 - ボタンデザインを改善（アイコン追加など）
-                    Text(if (uiState.isAdvertising) "発信停止" else "発信開始")
+                    Text(if (uiState.isEncounterActive) "すれ違い通信停止" else "すれ違い通信開始")
                 }
                 
                 // ========================================
