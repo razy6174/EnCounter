@@ -34,23 +34,40 @@ import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.encounter.app.ui.theme.EnCounterTheme
 
-// ==============================================================================
-// 📍 エントリーポイント: Logic担当
-// ==============================================================================
+/**
+ * レーダー画面（ホーム）
+ * 周囲のユーザーをレーダー表示
+ * 
+ * 担当: 昆野（Frontend）- UI実装
+ * ViewModel連携: 久米（Backend）- 実装済み
+ * 
+ * ⚠️ 注意: 以下のセクションは久米が実装済みのため変更禁止
+ * - ViewModelの取得（hiltViewModel）
+ * - uiState/uiEventの監視
+ * - 権限リクエストの実装
+ * - ViewModel関数の呼び出し（onClick内）
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadarScreen(
     onNavigateToMatchList: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToHelp: () -> Unit = {},
-    // 🔒 久米実装
+    // ========================================
+    // 🔒 久米実装: 変更禁止
+    // ========================================
     viewModel: RadarViewModel = hiltViewModel()
 ) {
-    // 🔒 久米実装（状態監視）
+    // ========================================
+    // 🔒 久米実装: 変更禁止（状態監視）
+    // ========================================
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // 🔒 久米実装（権限リクエスト）
+    
+    // ========================================
+    // 🔒 久米実装: 変更禁止（権限リクエスト）
+    // ========================================
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -60,8 +77,10 @@ fun RadarScreen(
         }
         viewModel.onPermissionResult(allGranted, permanentlyDenied)
     }
-
-    // 🔒 久米実装（UIイベント監視）
+    
+    // ========================================
+    // 🔒 久米実装: 変更禁止（UIイベント監視）
+    // ========================================
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
