@@ -24,7 +24,7 @@ import com.encounter.app.ui.screens.userdetail.UserDetailScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.Splash.route
+    startDestination: String = Screen.Radar.route
 ) {
     NavHost(
         navController = navController,
