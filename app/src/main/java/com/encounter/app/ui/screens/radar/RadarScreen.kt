@@ -1,26 +1,41 @@
 package com.encounter.app.ui.screens.radar
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.encounter.app.ui.theme.EnCounterTheme
 
 /**
@@ -28,14 +43,68 @@ import com.encounter.app.ui.theme.EnCounterTheme
  * 周囲のユーザーをレーダー表示
  * 
  * 担当: 昆野（Frontend）- UI実装
+ * ViewModel連携: 久米（Backend）- 実装済み
+ * 
+ * ⚠️ 注意: 以下のセクションは久米が実装済みのため変更禁止
+ * - ViewModelの取得（hiltViewModel）
+ * - uiState/uiEventの監視
+ * - 権限リクエストの実装
+ * - ViewModel関数の呼び出し（onClick内）
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadarScreen(
-    onNavigateToMatchList: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToHelp: () -> Unit
+    onNavigateToMatchList: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToHelp: () -> Unit = {},
+    // ========================================
+    // 🔒 久米実装: 変更禁止
+    // ========================================
+    viewModel: RadarViewModel = hiltViewModel()
 ) {
+    // ========================================
+    // 🔒 久米実装: 変更禁止（状態監視）
+    // ========================================
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // ========================================
+    // 🔒 久米実装: 変更禁止（権限リクエスト）
+    // ========================================
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        val permanentlyDenied = permissions.entries.any { (permission, granted) ->
+            !granted && !shouldShowRequestPermissionRationale(context as Activity, permission)
+        }
+        viewModel.onPermissionResult(allGranted, permanentlyDenied)
+    }
+    
+    // ========================================
+    // 🔒 久米実装: 変更禁止（UIイベント監視）
+    // ========================================
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is RadarUiEvent.RequestPermissions -> {
+                    permissionLauncher.launch(viewModel.getRequiredPermissions())
+                }
+                is RadarUiEvent.NavigateToSettings -> {
+                    // TODO: 昆野 - 設定画面への誘導ダイアログを実装
+                    snackbarHostState.showSnackbar("設定画面から権限を許可してください")
+                }
+                is RadarUiEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
+    
+    // ========================================
+    // ✏️ 昆野担当: 以下は自由に編集可能
+    // ========================================
     Scaffold(
         topBar = {
             TopAppBar(
@@ -52,10 +121,11 @@ fun RadarScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToMatchList) {
-                // TODO: リストアイコンに変更
+                // TODO: 昆野 - リストアイコンに変更
                 Text("📋")
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -67,20 +137,67 @@ fun RadarScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // TODO: レーダーアニメーションを実装
+                // TODO: 昆野 - レーダーアニメーションを実装
+                // 円形のレーダーアニメーション（回転するスキャンライン）
                 Text(
                     text = "🎯",
                     style = MaterialTheme.typography.displayLarge
                 )
+                
+                // TODO: 昆野 - デザインを調整（色、サイズ、フォントなど）
                 Text(
-                    text = "周囲をスキャン中...",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = "0人を検知",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "検知数: ${uiState.detectedDeviceCount}",
+                    style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
+                
+                // TODO: 昆野 - ステータス表示のデザインを改善
+                Text(
+                    text = when {
+                        !uiState.isBluetoothEnabled -> "⚠️ Bluetoothをオンにしてください"
+                        uiState.isScanning -> "🔍 スキャン中..."
+                        else -> "待機中"
+                    },
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // ========================================
+                // 🔒 久米実装: ボタンのonClickは変更禁止
+                // ✏️ 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
+                // ========================================
+                Button(
+                    onClick = { viewModel.toggleScanning() }  // 🔒 変更禁止
+                ) {
+                    // TODO: 昆野 - ボタンデザインを改善（アイコン追加など）
+                    Text(if (uiState.isScanning) "スキャン停止" else "スキャン開始")
+                }
+                
+                // ========================================
+                // 🔒 久米実装: ボタンのonClickは変更禁止
+                // ✏️ 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
+                // ========================================
+                Button(
+                    onClick = { viewModel.toggleAdvertising() }  // 🔒 変更禁止
+                ) {
+                    // TODO: 昆野 - ボタンデザインを改善（アイコン追加など）
+                    Text(if (uiState.isAdvertising) "発信停止" else "発信開始")
+                }
+                
+                // ========================================
+                // 🔒 久米実装: ボタンのonClickは変更禁止
+                // ✏️ 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
+                // ========================================
+                Button(
+                    onClick = { viewModel.clearDetectedDevices() }  // 🔒 変更禁止
+                ) {
+                    // TODO: 昆野 - ボタンデザインを改善
+                    Text("リストクリア")
+                }
+                
+                // TODO: 昆野 - 検知したデバイスのリスト表示を実装
+                // uiState.detectedDevices を使用してリスト表示
             }
         }
     }
@@ -90,10 +207,6 @@ fun RadarScreen(
 @Composable
 fun RadarScreenPreview() {
     EnCounterTheme {
-        RadarScreen(
-            onNavigateToMatchList = {},
-            onNavigateToProfile = {},
-            onNavigateToHelp = {}
-        )
+        RadarScreen()
     }
 }
