@@ -1,5 +1,6 @@
 package com.encounter.app.ble
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.AdvertiseCallback
@@ -12,8 +13,11 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +25,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/**
+ * 権限状態
+ */
+enum class PermissionState {
+    UNKNOWN,
+    GRANTED,
+    DENIED,
+    DENIED_PERMANENTLY
+}
 
 /**
  * BLE通信を管理するクラス
@@ -65,6 +79,10 @@ class BleManager @Inject constructor(
     // アドバタイズ状態
     private val _isAdvertising = MutableStateFlow(false)
     val isAdvertising: StateFlow<Boolean> = _isAdvertising.asStateFlow()
+
+    // 権限状態
+    private val _permissionState = MutableStateFlow(PermissionState.UNKNOWN)
+    val permissionState: StateFlow<PermissionState> = _permissionState.asStateFlow()
     
     /**
      * Bluetoothが有効かどうか
@@ -167,6 +185,64 @@ class BleManager @Inject constructor(
      */
     fun clearDetectedDevices() {
         _detectedDevices.value = emptySet()
+    }
+    
+    /**
+     * 必要なBLE権限が付与されているかチェック
+     */
+    fun checkPermissions(): Boolean {
+        val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                Manifest.permission.BLUETOOTH_CONNECT
+            )
+        } else {
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        }
+        
+        val allGranted = requiredPermissions.all { permission ->
+            ContextCompat.checkSelfPermission(context, permission) == 
+                PackageManager.PERMISSION_GRANTED
+        }
+        
+        _permissionState.value = if (allGranted) {
+            PermissionState.GRANTED
+        } else {
+            PermissionState.DENIED
+        }
+        
+        return allGranted
+    }
+    
+    /**
+     * 権限の状態を更新（Activity側から呼び出す）
+     */
+    fun updatePermissionState(granted: Boolean, permanentlyDenied: Boolean = false) {
+        _permissionState.value = when {
+            granted -> PermissionState.GRANTED
+            permanentlyDenied -> PermissionState.DENIED_PERMANENTLY
+            else -> PermissionState.DENIED
+        }
+    }
+    
+    /**
+     * 必要なBLE権限のリストを取得
+     */
+    fun getRequiredPermissions(): Array<String> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                Manifest.permission.BLUETOOTH_CONNECT
+            )
+        } else {
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        }
     }
     
     private val advertiseCallback = object : AdvertiseCallback() {
