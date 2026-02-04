@@ -39,38 +39,37 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.encounter.app.ui.theme.EnCounterTheme
 
 /**
- * レーダー画面（ホーム）
+ * レーダー画面（外側）
  * 周囲のユーザーをレーダー表示
  * 
  * 担当: 昆野（Frontend）- UI実装
  * ViewModel連携: 久米（Backend）- 実装済み
  * 
- * ⚠️ 注意: 以下のセクションは久米が実装済みのため変更禁止
+ * 注意: 以下のセクションは久米が実装済みのため変更禁止
  * - ViewModelの取得（hiltViewModel）
  * - uiState/uiEventの監視
  * - 権限リクエストの実装
  * - ViewModel関数の呼び出し（onClick内）
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadarScreen(
     onNavigateToMatchList: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToHelp: () -> Unit = {},
     // ========================================
-    // 🔒 久米実装: 変更禁止
+    // 久米実装: 変更禁止
     // ========================================
     viewModel: RadarViewModel = hiltViewModel()
 ) {
     // ========================================
-    // 🔒 久米実装: 変更禁止（状態監視）
+    // 久米実装: 変更禁止（状態監視）
     // ========================================
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     
     // ========================================
-    // 🔒 久米実装: 変更禁止（権限リクエスト）
+    // 久米実装: 変更禁止（権限リクエスト）
     // ========================================
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -83,7 +82,7 @@ fun RadarScreen(
     }
     
     // ========================================
-    // 🔒 久米実装: 変更禁止（UIイベント監視）
+    // 久米実装: 変更禁止（UIイベント監視）
     // ========================================
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
@@ -102,9 +101,35 @@ fun RadarScreen(
         }
     }
     
-    // ========================================
-    // ✏️ 昆野担当: 以下は自由に編集可能
-    // ========================================
+    // 内側のContent関数を呼び出す
+    RadarScreenContent(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onNavigateToMatchList = onNavigateToMatchList,
+        onNavigateToProfile = onNavigateToProfile,
+        onNavigateToHelp = onNavigateToHelp,
+        onToggleEncounter = { viewModel.toggleEncounter() },
+        onClearDetectedDevices = { viewModel.clearDetectedDevices() }
+    )
+}
+
+/**
+ * レーダー画面のコンテンツ（内側）
+ * 状態を引数で受け取るため、Previewが可能
+ * 
+ * 昆野担当: 以下は自由に編集可能
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RadarScreenContent(
+    uiState: RadarUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onNavigateToMatchList: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onNavigateToHelp: () -> Unit,
+    onToggleEncounter: () -> Unit,
+    onClearDetectedDevices: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -154,8 +179,8 @@ fun RadarScreen(
                 // TODO: 昆野 - ステータス表示のデザインを改善
                 Text(
                     text = when {
-                        !uiState.isBluetoothEnabled -> "⚠️ Bluetoothをオンにしてください"
-                        uiState.isEncounterActive -> "🔍 すれ違い通信中..."
+                        !uiState.isBluetoothEnabled -> "Bluetoothをオンにしてください"
+                        uiState.isEncounterActive -> "すれ違い通信中..."
                         else -> "待機中"
                     },
                     style = MaterialTheme.typography.bodyLarge
@@ -164,23 +189,23 @@ fun RadarScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // ========================================
-                // 🔒 久米実装: ボタンのonClickは変更禁止
-                // ✏️ 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
+                // 久米実装: ボタンのonClickは変更禁止
+                // 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
                 // すれ違い通信ボタン（スキャン+アドバタイズ同時実行）
                 // ========================================
                 Button(
-                    onClick = { viewModel.toggleEncounter() }  // 🔒 変更禁止
+                    onClick = onToggleEncounter
                 ) {
                     // TODO: 昆野 - ボタンデザインを改善（アイコン追加など）
                     Text(if (uiState.isEncounterActive) "すれ違い通信停止" else "すれ違い通信開始")
                 }
                 
                 // ========================================
-                // 🔒 久米実装: ボタンのonClickは変更禁止
-                // ✏️ 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
+                // 久米実装: ボタンのonClickは変更禁止
+                // 昆野担当: ボタンのデザイン（色、形、サイズ）は変更可能
                 // ========================================
                 Button(
-                    onClick = { viewModel.clearDetectedDevices() }  // 🔒 変更禁止
+                    onClick = onClearDetectedDevices
                 ) {
                     // TODO: 昆野 - ボタンデザインを改善
                     Text("リストクリア")
@@ -195,8 +220,57 @@ fun RadarScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun RadarScreenPreview() {
+private fun RadarScreenPreview() {
     EnCounterTheme {
-        RadarScreen()
+        RadarScreenContent(
+            uiState = RadarUiState(
+                isBluetoothEnabled = true,
+                isScanning = true,
+                isAdvertising = true,
+                detectedDeviceCount = 3
+            ),
+            onNavigateToMatchList = {},
+            onNavigateToProfile = {},
+            onNavigateToHelp = {},
+            onToggleEncounter = {},
+            onClearDetectedDevices = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RadarScreenIdlePreview() {
+    EnCounterTheme {
+        RadarScreenContent(
+            uiState = RadarUiState(
+                isBluetoothEnabled = true,
+                isScanning = false,
+                isAdvertising = false,
+                detectedDeviceCount = 0
+            ),
+            onNavigateToMatchList = {},
+            onNavigateToProfile = {},
+            onNavigateToHelp = {},
+            onToggleEncounter = {},
+            onClearDetectedDevices = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RadarScreenBluetoothOffPreview() {
+    EnCounterTheme {
+        RadarScreenContent(
+            uiState = RadarUiState(
+                isBluetoothEnabled = false
+            ),
+            onNavigateToMatchList = {},
+            onNavigateToProfile = {},
+            onNavigateToHelp = {},
+            onToggleEncounter = {},
+            onClearDetectedDevices = {}
+        )
     }
 }

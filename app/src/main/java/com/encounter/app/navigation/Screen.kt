@@ -8,6 +8,9 @@ package com.encounter.app.navigation
 sealed class Screen(val route: String) {
     // 初期設定フロー
     data object Splash : Screen("splash")
+    
+    // プロフィール設定フロー（ネスト）
+    data object ProfileFlow : Screen("profile_flow")
     data object ProfileSetup : Screen("profile_setup")
     data object TagSelection : Screen("tag_selection")
     data object PermissionRequest : Screen("permission_request")
