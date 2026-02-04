@@ -24,7 +24,8 @@ import com.encounter.app.ui.screens.userdetail.UserDetailScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.Splash.route
+    // TODO: デバッグ用に一時的にRadar画面から開始（本番前にSplash.routeに戻す）
+    startDestination: String = Screen.Radar.route  // 元: Screen.Splash.route
 ) {
     NavHost(
         navController = navController,

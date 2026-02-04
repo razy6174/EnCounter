@@ -27,7 +27,14 @@ data class RadarUiState(
     val detectedDeviceCount: Int = 0,
     val detectedDevices: Set<String> = emptySet(),
     val errorMessage: String? = null
-)
+) {
+    /**
+     * すれ違い通信がアクティブかどうか
+     * スキャンまたはアドバタイズのどちらかが動作中ならtrue
+     */
+    val isEncounterActive: Boolean
+        get() = isScanning || isAdvertising
+}
 
 /**
  * レーダー画面のUIイベント（一度きりのイベント）
@@ -46,8 +53,9 @@ sealed class RadarUiEvent {
  */
 @HiltViewModel
 class RadarViewModel @Inject constructor(
-    private val bleManager: BleManager,
-    private val userRepository: UserRepository
+    private val bleManager: BleManager
+    // TODO: デバッグ用に一時的にコメントアウト（Firebase設定後に戻す）
+    // private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RadarUiState())
@@ -144,13 +152,15 @@ class RadarViewModel @Inject constructor(
             return
         }
         
-        val currentUserId = userRepository.getCurrentUserId()
-        if (currentUserId == null) {
-            viewModelScope.launch {
-                _uiEvent.emit(RadarUiEvent.ShowError("ログインが必要です"))
-            }
-            return
-        }
+        // TODO: デバッグ用に仮のUIDを使用（Firebase設定後に戻す）
+        // val currentUserId = userRepository.getCurrentUserId()
+        // if (currentUserId == null) {
+        //     viewModelScope.launch {
+        //         _uiEvent.emit(RadarUiEvent.ShowError("ログインが必要です"))
+        //     }
+        //     return
+        // }
+        val currentUserId = "debug_user_${System.currentTimeMillis()}"
         
         if (_uiState.value.isAdvertising) {
             bleManager.stopAdvertising()
@@ -184,5 +194,26 @@ class RadarViewModel @Inject constructor(
      */
     fun clearDetectedDevices() {
         bleManager.clearDetectedDevices()
+    }
+    
+    /**
+     * すれ違い通信を開始/停止をトグル
+     * スキャンとアドバタイズを同時に制御
+     * Firebase不要でBLE通信のみをテスト可能
+     */
+    fun toggleEncounter() {
+        if (!bleManager.checkPermissions()) {
+            viewModelScope.launch {
+                _uiEvent.emit(RadarUiEvent.RequestPermissions)
+            }
+            return
+        }
+        
+        if (_uiState.value.isEncounterActive) {
+            bleManager.stopEncounter()
+        } else {
+            // Firebase不要: デバッグ用のUIDを自動生成
+            bleManager.startEncounter()
+        }
     }
 }
