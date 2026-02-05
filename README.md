@@ -283,13 +283,6 @@ flowchart TD
     C --> E["UI実装<br/>（Gemini 3 Pro）"]
     D --> F["ドキュメント作成<br/>（GitHub Copilot）"]
     E --> F
-    
-    style A fill:#FFE5B4
-    style B fill:#B4D7FF
-    style C fill:#D7FFB4
-    style D fill:#FFB4E5
-    style E fill:#FFB4E5
-    style F fill:#E5B4FF
 ```
 
 ### 開発ドキュメント
@@ -329,11 +322,6 @@ flowchart LR
     Backend <--> Copilot
     Frontend <--> Gemini
     Backend <-.役割分担明確化.-> Frontend
-    
-    style Backend fill:#4A90E2
-    style Frontend fill:#E24A90
-    style Copilot fill:#333
-    style Gemini fill:#8E75B2
 ```
 
 ### AI活用の設計思想

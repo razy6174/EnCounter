@@ -40,45 +40,37 @@ sequenceDiagram
     participant BLE as BLE通信
     participant Other as 他ユーザー端末
 
-    rect rgb(240, 248, 255)
-        Note over User,DB: 🚀 アプリ起動・初期化
-        User->>App: アプリ起動
-        App->>Auth: 匿名認証
-        Auth-->>App: UID発行
-        App->>DB: プロフィール取得/作成
-        DB-->>App: User情報
+    Note over User,DB: 🚀 アプリ起動・初期化
+    User->>App: アプリ起動
+    App->>Auth: 匿名認証
+    Auth-->>App: UID発行
+    App->>DB: プロフィール取得/作成
+    DB-->>App: User情報
+
+    Note over User,Other: 📡 すれちがい通信開始
+    User->>App: 「すれちがい開始」タップ
+    App->>BLE: startEncounter(uidPrefix)
+    
+    par 発信（Advertise）
+        BLE->>Other: Service UUID + uidPrefix
+    and 受信（Scan）
+        Other->>BLE: BLE信号
     end
 
-    rect rgb(255, 250, 240)
-        Note over User,Other: 📡 すれちがい通信開始
-        User->>App: 「すれちがい開始」タップ
-        App->>BLE: startEncounter(uidPrefix)
-        
-        par 発信（Advertise）
-            BLE->>Other: Service UUID + uidPrefix
-        and 受信（Scan）
-            Other->>BLE: BLE信号
-        end
-    end
+    Note over App,DB: 🔍 検知・フィルタリング
+    BLE-->>App: 検知イベント(uidPrefix)
+    App->>DB: getUserByUidPrefix()
+    DB-->>App: 相手のUser情報
+    App->>App: フィルタリング処理
+    App->>App: 通知（バイブ・サウンド）
+    App->>App: 履歴保存
 
-    rect rgb(240, 255, 240)
-        Note over App,DB: 🔍 検知・フィルタリング
-        BLE-->>App: 検知イベント(uidPrefix)
-        App->>DB: getUserByUidPrefix()
-        DB-->>App: 相手のUser情報
-        App->>App: フィルタリング処理
-        App->>App: 通知（バイブ・サウンド）
-        App->>App: 履歴保存
-    end
-
-    rect rgb(255, 240, 245)
-        Note over User,DB: 💬 チャット開始
-        User->>App: ユーザーカードタップ
-        App->>DB: getOrCreateChatRoom()
-        DB-->>App: ChatRoom
-        User->>App: メッセージ送信
-        App->>DB: sendMessage()
-    end
+    Note over User,DB: 💬 チャット開始
+    User->>App: ユーザーカードタップ
+    App->>DB: getOrCreateChatRoom()
+    DB-->>App: ChatRoom
+    User->>App: メッセージ送信
+    App->>DB: sendMessage()
 ```
 
 ### 技術スタック
@@ -891,10 +883,6 @@ flowchart TD
     
     H --> D
     I --> J[null返却]
-    
-    style C fill:#90EE90
-    style E fill:#FFB6C1
-    style I fill:#D3D3D3
 ```
 
 ### 1. uidPrefixキャッシュ
@@ -962,10 +950,6 @@ flowchart LR
         Cache -->|Hit| Return[即座に返却]
         Chunk --> Return
     end
-    
-    style Cache fill:#FFD700
-    style Async fill:#87CEEB
-    style Chunk fill:#FFA07A
 ```
 
 ---
@@ -999,14 +983,6 @@ flowchart TD
     
     I -->|No| I1["共通タグを設定"]
     I -->|Yes| J["✅ 検知成功"]
-    
-    style J fill:#90EE90
-    style B1 fill:#FFB6C1
-    style C1 fill:#FFB6C1
-    style E1 fill:#FFB6C1
-    style G1 fill:#FFD700
-    style H1 fill:#FFD700
-    style I1 fill:#FFD700
 ```
 
 ### BLEスキャンが動作しない
