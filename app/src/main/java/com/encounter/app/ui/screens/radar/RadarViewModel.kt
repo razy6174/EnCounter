@@ -53,9 +53,8 @@ sealed class RadarUiEvent {
  */
 @HiltViewModel
 class RadarViewModel @Inject constructor(
-    private val bleManager: BleManager
-    // TODO: デバッグ用に一時的にコメントアウト（Firebase設定後に戻す）
-    // private val userRepository: UserRepository
+    private val bleManager: BleManager,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RadarUiState())
@@ -152,15 +151,13 @@ class RadarViewModel @Inject constructor(
             return
         }
         
-        // TODO: デバッグ用に仮のUIDを使用（Firebase設定後に戻す）
-        // val currentUserId = userRepository.getCurrentUserId()
-        // if (currentUserId == null) {
-        //     viewModelScope.launch {
-        //         _uiEvent.emit(RadarUiEvent.ShowError("ログインが必要です"))
-        //     }
-        //     return
-        // }
-        val currentUserId = "debug_user_${System.currentTimeMillis()}"
+        val currentUserId = userRepository.getCurrentUserId()
+        if (currentUserId == null) {
+            viewModelScope.launch {
+                _uiEvent.emit(RadarUiEvent.ShowError("ログインが必要です"))
+            }
+            return
+        }
         
         if (_uiState.value.isAdvertising) {
             bleManager.stopAdvertising()
