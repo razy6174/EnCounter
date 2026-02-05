@@ -49,7 +49,8 @@ object AvailableTags {
         Tag("sauna", "サウナ", ""),
         Tag("engineer", "エンジニア", ""),
         Tag("designer", "デザイナー", ""),
-        Tag("student", "学生", "")
+        Tag("student", "学生", ""),
+        Tag("developer", "開発者", "")
     )
 }
 
