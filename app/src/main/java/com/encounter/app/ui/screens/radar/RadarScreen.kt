@@ -39,6 +39,7 @@ import com.encounter.app.R
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.material.icons.filled.Info
 
 /**
  * レーダー画面（ホーム）
@@ -162,12 +163,13 @@ fun RadarScreenContent(
 
                     // メニューボタン
                     TopBarActionButton(
-                        icon = Icons.Default.Menu,
-                        contentDescription = "メニュー",
+                        icon = Icons.Default.Info,
+                        // 説明文も変更
+                        contentDescription = "ヘルプ",
                         onClick = onNavigateToHelp
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp)) // 右端の余白
+                    Spacer(modifier = Modifier.width(8.dp))
                 }
             )
         },
