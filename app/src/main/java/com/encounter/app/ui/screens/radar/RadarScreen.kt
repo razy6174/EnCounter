@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.encounter.app.domain.model.User
 import com.encounter.app.ui.theme.EnCounterTheme
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -58,6 +59,7 @@ import androidx.compose.material.icons.filled.Info
 @Composable
 fun RadarScreen(
     onNavigateToMatchList: (detectedUids: String) -> Unit = {},
+    onNavigateToUserDetail: (userId: String) -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToHelp: () -> Unit = {},
@@ -114,6 +116,13 @@ fun RadarScreen(
             val uidsString = uiState.detectedDevices.joinToString(",")
             onNavigateToMatchList(uidsString)
         },
+        onUserClick = { uidPrefix ->
+            // uidPrefixからユーザーIDを取得して遷移
+            val user = uiState.detectedUsers[uidPrefix]
+            if (user != null) {
+                onNavigateToUserDetail(user.uid)
+            }
+        },
         onNavigateToProfile = onNavigateToProfile,
         onNavigateToSettings = onNavigateToSettings,
         onNavigateToHelp = onNavigateToHelp,
@@ -134,6 +143,7 @@ fun RadarScreenContent(
     uiState: RadarUiState,
     snackbarHostState: SnackbarHostState,
     onNavigateToMatchList: () -> Unit,
+    onUserClick: (uidPrefix: String) -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToHelp: () -> Unit,
@@ -351,7 +361,7 @@ fun RadarScreenContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "検出デバイス一覧",
+                        text = "すれちがったユーザー",
                         style = MaterialTheme.typography.titleMedium
                     )
                     TextButton(onClick = onClearDetectedDevices) {
@@ -360,7 +370,11 @@ fun RadarScreenContent(
                         Text("クリア")
                     }
                 }
-                DeviceList(devices = uiState.detectedDevices.toList())
+                DetectedUserList(
+                    detectedDevices = uiState.detectedDevices.toList(),
+                    detectedUsers = uiState.detectedUsers,
+                    onUserClick = onUserClick
+                )
             }
         }
     }
@@ -463,15 +477,78 @@ fun DeviceList(devices: List<Any>) {
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        // 修正箇所: bodySmall → labelSmall に変更
-                        // labelSmall には DotGothic16 フォントが適用されているため、
-                        // これで灰色の文字もドット絵フォントになります！
                         Text(
                             text = device.toString(),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray,
                             maxLines = 1
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * すれちがったユーザーリスト
+ * ユーザー名、タグ、ステータスを表示し、タップで詳細画面へ遷移
+ */
+@Composable
+fun DetectedUserList(
+    detectedDevices: List<String>,
+    detectedUsers: Map<String, User>,
+    onUserClick: (uidPrefix: String) -> Unit
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(detectedDevices, key = { it }) { uidPrefix ->
+            val user = detectedUsers[uidPrefix]
+            Card(
+                onClick = { onUserClick(uidPrefix) },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // ステータス絵文字またはデフォルトアイコン
+                    if (user != null) {
+                        Text(
+                            text = user.status.emoji,
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    } else {
+                        Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = user?.displayName ?: "読み込み中...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (user != null && user.tags.isNotEmpty()) {
+                            Text(
+                                text = user.tags.take(3).joinToString(" ") { "#$it" },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1
+                            )
+                        }
+                        if (user != null && user.comment.isNotEmpty()) {
+                            Text(
+                                text = user.comment,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }
@@ -517,16 +594,21 @@ fun RadarRipple(delayMillis: Int) {
 fun RadarScreenActivePreview() {
     EnCounterTheme {
         RadarScreenContent(
-            // 修正: エラーの原因だった isEncounterActive を isScanning に戻しました
             uiState = RadarUiState(
                 isScanning = true,
                 isAdvertising = true,
                 isBluetoothEnabled = true,
                 detectedDeviceCount = 3,
-                detectedDevices = setOf("UserA", "UserB", "UserC")
+                detectedDevices = setOf("UserA", "UserB", "UserC"),
+                detectedUsers = mapOf(
+                    "UserA" to User(uid = "1", displayName = "山田太郎", tags = listOf("Android", "Kotlin")),
+                    "UserB" to User(uid = "2", displayName = "佐藤花子", tags = listOf("サウナ")),
+                    "UserC" to User(uid = "3", displayName = "鈴木一郎", comment = "よろしく！")
+                )
             ),
             snackbarHostState = remember { SnackbarHostState() },
             onNavigateToMatchList = {},
+            onUserClick = {},
             onNavigateToProfile = {},
             onNavigateToSettings = {},
             onNavigateToHelp = {},

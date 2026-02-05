@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.encounter.app.ble.BleManager
 import com.encounter.app.ble.PermissionState
+import com.encounter.app.data.repository.EncounterHistoryRepository
 import com.encounter.app.data.repository.SettingsRepository
 import com.encounter.app.data.repository.UserRepository
 import com.encounter.app.debug.DebugHelper
@@ -35,6 +36,7 @@ data class RadarUiState(
     val permissionState: PermissionState = PermissionState.UNKNOWN,
     val detectedDeviceCount: Int = 0,
     val detectedDevices: Set<String> = emptySet(),
+    val detectedUsers: Map<String, User> = emptyMap(),  // 検知ユーザーの詳細情報
     val isForceDetectionMode: Boolean = false,
     val errorMessage: String? = null
 ) {
@@ -66,6 +68,7 @@ class RadarViewModel @Inject constructor(
     private val bleManager: BleManager,
     private val userRepository: UserRepository,
     private val settingsRepository: SettingsRepository,
+    private val encounterHistoryRepository: EncounterHistoryRepository,
     private val debugHelper: DebugHelper,
     private val notificationManager: EncounterNotificationManager
 ) : ViewModel() {
@@ -250,6 +253,16 @@ class RadarViewModel @Inject constructor(
         Log.d("RadarViewModel", "Adding ${detectedUser.displayName} to detected devices")
         bleManager.addDetectedDevice(uidPrefix)
         
+        // ユーザー情報をUIに反映
+        _uiState.update { state ->
+            state.copy(
+                detectedUsers = state.detectedUsers + (uidPrefix to detectedUser)
+            )
+        }
+        
+        // 履歴に保存（永続化）
+        encounterHistoryRepository.addEncounter(uidPrefix, detectedUser.displayName)
+        
         // 通知（バイブ・音声）
         // BleManager.addDetectedDevice()内で newDetectionEvent が発火され、
         // observeNewDetections()で通知が実行される
@@ -384,10 +397,12 @@ class RadarViewModel @Inject constructor(
     }
     
     /**
-     * 検知リストをクリア
+     * 検知リストをクリア（現在のセッションのみ）
+     * 履歴は残る
      */
     fun clearDetectedDevices() {
         bleManager.clearDetectedDevices()
+        _uiState.update { it.copy(detectedUsers = emptyMap()) }
     }
     
     /**

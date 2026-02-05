@@ -1,13 +1,12 @@
 package com.encounter.app.ui.screens.matchlist
 
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.encounter.app.data.repository.EncounterHistoryRepository
 import com.encounter.app.data.repository.UserRepository
+import com.encounter.app.domain.model.EncounterRecord
 import com.encounter.app.domain.model.User
-import com.encounter.app.domain.model.UserStatus
-import com.encounter.app.domain.model.UserStatus.Companion.isActive
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,19 +21,19 @@ import javax.inject.Inject
 private const val TAG = "MatchListViewModel"
 
 /**
- * マッチリスト画面のUI状態
+ * すれちがい図鑑画面のUI状態
  */
 data class MatchListUiState(
     val isLoading: Boolean = false,
     val users: List<User> = emptyList(),
     val filteredUsers: List<User> = emptyList(),
-    val detectedUids: Set<String> = emptySet(),
-    val isFilterEnabled: Boolean = false,  // フィルタリングは既にRadarViewModelで完了
+    val encounterRecords: List<EncounterRecord> = emptyList(),
+    val showDeleteConfirmDialog: Boolean = false,
     val error: String? = null
 )
 
 /**
- * マッチリスト画面のUIイベント（一度きりのイベント）
+ * すれちがい図鑑画面のUIイベント（一度きりのイベント）
  */
 sealed class MatchListUiEvent {
     data class NavigateToUserDetail(val userId: String) : MatchListUiEvent()
@@ -42,15 +41,15 @@ sealed class MatchListUiEvent {
 }
 
 /**
- * マッチリスト画面のViewModel
- * BLEで検知したUIDからユーザー情報を取得・表示
+ * すれちがい図鑑画面のViewModel
+ * 永続化されたすれ違い履歴からユーザー情報を取得・表示
  * 
  * 担当: 久米（Backend）
  */
 @HiltViewModel
 class MatchListViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    savedStateHandle: SavedStateHandle
+    private val encounterHistoryRepository: EncounterHistoryRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(MatchListUiState())
@@ -60,62 +59,58 @@ class MatchListViewModel @Inject constructor(
     val uiEvent: SharedFlow<MatchListUiEvent> = _uiEvent.asSharedFlow()
     
     init {
-        // Navigation引数から検知UIDリストを取得
-        val detectedUidsArg: String? = savedStateHandle["detectedUids"]
-        Log.d(TAG, "Received detectedUids arg: $detectedUidsArg")
-        
-        if (!detectedUidsArg.isNullOrEmpty()) {
-            val uids = detectedUidsArg.split(",").filter { it.isNotBlank() }.toSet()
-            Log.d(TAG, "Parsed UIDs (${uids.size}件): $uids")
-            _uiState.update { it.copy(detectedUids = uids) }
-            loadMatchedUsers(uids.toList())
-        } else {
-            Log.w(TAG, "detectedUidsArg is null or empty")
+        // 履歴リポジトリから読み込み
+        observeEncounterHistory()
+    }
+    
+    /**
+     * 永続化された履歴を監視
+     */
+    private fun observeEncounterHistory() {
+        viewModelScope.launch {
+            encounterHistoryRepository.history.collect { records ->
+                Log.d(TAG, "Encounter history updated: ${records.size} records")
+                _uiState.update { it.copy(encounterRecords = records) }
+                
+                // uidPrefixリストを取得してユーザー情報をFirebaseから取得
+                if (records.isNotEmpty()) {
+                    loadUsersFromHistory(records)
+                } else {
+                    _uiState.update { 
+                        it.copy(
+                            users = emptyList(),
+                            filteredUsers = emptyList(),
+                            isLoading = false
+                        )
+                    }
+                }
+            }
         }
     }
     
     /**
-     * 検知UIDリストを設定してユーザー情報を読み込む
-     * RadarViewModelからの連携用
+     * 履歴からユーザー情報を読み込み
      */
-    fun setDetectedUids(uids: Set<String>) {
-        _uiState.update { it.copy(detectedUids = uids) }
-        loadMatchedUsers(uids.toList())
-    }
-    
-    /**
-     * 検知UIDからユーザー情報を取得
-     * 
-     * フィルタリング早期化により、RadarViewModelで既にフィルター済みのため、
-     * ここではフィルタリングを行わず、そのまま表示する
-     * 
-     * 担当: 久米（Backend）
-     */
-    private fun loadMatchedUsers(uids: List<String>) {
-        Log.d(TAG, "loadMatchedUsers called with ${uids.size} UIDs: $uids")
-        
-        if (uids.isEmpty()) {
-            Log.w(TAG, "UIDs list is empty, showing empty list")
-            _uiState.update { it.copy(users = emptyList(), filteredUsers = emptyList(), isLoading = false) }
-            return
-        }
+    private fun loadUsersFromHistory(records: List<EncounterRecord>) {
+        val uidPrefixes = records.map { it.uidPrefix }
+        Log.d(TAG, "Loading users from history: ${uidPrefixes.size} uidPrefixes")
         
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
             try {
-                userRepository.getUsersByIds(uids).collect { users ->
-                    Log.d(TAG, "Fetched ${users.size} users from repository (pre-filtered by RadarViewModel)")
+                userRepository.getUsersByIds(uidPrefixes).collect { users ->
+                    Log.d(TAG, "Fetched ${users.size} users from repository")
                     
-                    users.forEach { user ->
-                        Log.d(TAG, "  - ${user.uid}: ${user.displayName} (${user.status.displayName})")
+                    // 履歴の順序（最新が上）を維持してソート
+                    val sortedUsers = uidPrefixes.mapNotNull { prefix ->
+                        users.find { it.uidPrefix == prefix }
                     }
                     
-                    // フィルタリングは不要（既にRadarViewModelでフィルター済み）
                     _uiState.update { 
                         it.copy(
-                            users = users,
-                            filteredUsers = users,  // 同じリスト
+                            users = sortedUsers,
+                            filteredUsers = sortedUsers,
                             isLoading = false,
                             error = null
                         ) 
@@ -135,40 +130,13 @@ class MatchListViewModel @Inject constructor(
     }
     
     /**
-     * マッチングフィルターを適用
-     * OFFLINE（オフライン）以外のユーザーを返す
-     * 
-     * 担当: 久米（Backend）
-     */
-    private fun applyMatchingFilter(users: List<User>): List<User> {
-        return if (_uiState.value.isFilterEnabled) {
-            users.filter { it.status.isActive() }
-        } else {
-            users
-        }
-    }
-    
-    /**
-     * フィルタリングの有効/無効を切り替え
-     */
-    fun toggleFilter() {
-        val newFilterState = !_uiState.value.isFilterEnabled
-        _uiState.update { 
-            val filtered = if (newFilterState) {
-                it.users.filter { user -> user.status.isActive() }
-            } else {
-                it.users
-            }
-            it.copy(isFilterEnabled = newFilterState, filteredUsers = filtered)
-        }
-        Log.d(TAG, "Filter toggled: $newFilterState")
-    }
-    
-    /**
      * ユーザー情報を最新化
      */
     fun refreshUsers() {
-        loadMatchedUsers(_uiState.value.detectedUids.toList())
+        val records = _uiState.value.encounterRecords
+        if (records.isNotEmpty()) {
+            loadUsersFromHistory(records)
+        }
     }
     
     /**
@@ -178,6 +146,37 @@ class MatchListViewModel @Inject constructor(
         viewModelScope.launch {
             _uiEvent.emit(MatchListUiEvent.NavigateToUserDetail(userId))
         }
+    }
+    
+    /**
+     * 履歴から単一削除
+     */
+    fun deleteEncounter(uidPrefix: String) {
+        Log.d(TAG, "Deleting encounter: $uidPrefix")
+        encounterHistoryRepository.removeEncounter(uidPrefix)
+    }
+    
+    /**
+     * 全削除確認ダイアログを表示
+     */
+    fun showDeleteAllConfirmDialog() {
+        _uiState.update { it.copy(showDeleteConfirmDialog = true) }
+    }
+    
+    /**
+     * 全削除確認ダイアログを非表示
+     */
+    fun hideDeleteAllConfirmDialog() {
+        _uiState.update { it.copy(showDeleteConfirmDialog = false) }
+    }
+    
+    /**
+     * 履歴を全削除
+     */
+    fun clearAllHistory() {
+        Log.d(TAG, "Clearing all history")
+        encounterHistoryRepository.clearHistory()
+        _uiState.update { it.copy(showDeleteConfirmDialog = false) }
     }
     
     /**
