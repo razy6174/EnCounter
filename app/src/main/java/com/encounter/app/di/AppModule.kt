@@ -17,16 +17,15 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // TODO: デバッグ用に一時的にコメントアウト（Firebase設定後に戻す）
-    // @Provides
-    // @Singleton
-    // fun provideFirebaseAuth(): FirebaseAuth {
-    //     return FirebaseAuth.getInstance()
-    // }
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
 
-    // @Provides
-    // @Singleton
-    // fun provideFirebaseFirestore(): FirebaseFirestore {
-    //     return FirebaseFirestore.getInstance()
-    // }
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
+    }
 }

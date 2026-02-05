@@ -121,7 +121,7 @@ class BleManager @Inject constructor(
      * アドバタイズを開始
      * @param uid ユーザーのUID（短縮版16文字）
      */
-    fun startAdvertising(uid: String) {
+    fun startAdvertising(uidPrefix: String) {
         val advertiser = this.advertiser ?: run {
             Log.e(TAG, "Advertiser not available")
             return
@@ -144,15 +144,14 @@ class BleManager @Inject constructor(
             .setIncludeDeviceName(false)
             .build()
         
-        // Scan ResponseにUIDを含める（16文字に短縮）
-        val shortUid = uid.take(16)
+        // Scan ResponseにuidPrefixをそのまま含める
         val scanResponse = AdvertiseData.Builder()
-            .addServiceData(ParcelUuid(SERVICE_UUID), shortUid.toByteArray())
+            .addServiceData(ParcelUuid(SERVICE_UUID), uidPrefix.toByteArray())
             .build()
         
         try {
             advertiser.startAdvertising(settings, advertiseData, scanResponse, advertiseCallback)
-            Log.d(TAG, "Advertising started with UID: $shortUid")
+            Log.d(TAG, "Advertising started with uidPrefix: $uidPrefix")
         } catch (e: SecurityException) {
             Log.e(TAG, "Permission denied for advertising", e)
         }
@@ -242,14 +241,14 @@ class BleManager @Inject constructor(
      * すれ違い通信を開始（スキャン + アドバタイズ同時）
      * Firebase不要でBLE通信のみをテストする場合に使用
      * 
-     * @param uid ユーザーのUID（省略時は自動生成）
+     * @param uidPrefix ユーザーのuidPrefix（16文字、省略時は自動生成）
      * @param useFilter スキャン時にService UUIDフィルタを使用するか（デバッグ時はfalse推奨）
      */
-    fun startEncounter(uid: String? = null, useFilter: Boolean = false) {
-        val actualUid = uid ?: generateDebugUid()
-        startAdvertising(actualUid)
+    fun startEncounter(uidPrefix: String? = null, useFilter: Boolean = false) {
+        val actualUidPrefix = uidPrefix ?: generateDebugUid().take(16)
+        startAdvertising(actualUidPrefix)
         startScanning(useFilter)
-        Log.d(TAG, "Encounter started with UID: $actualUid (filter: $useFilter)")
+        Log.d(TAG, "Encounter started with uidPrefix: $actualUidPrefix (filter: $useFilter)")
     }
     
     /**

@@ -8,13 +8,18 @@ package com.encounter.app.navigation
 sealed class Screen(val route: String) {
     // 初期設定フロー
     data object Splash : Screen("splash")
+    
+    // プロフィール設定フロー（ネスト）
+    data object ProfileFlow : Screen("profile_flow")
     data object ProfileSetup : Screen("profile_setup")
     data object TagSelection : Screen("tag_selection")
     data object PermissionRequest : Screen("permission_request")
     
     // メイン画面
     data object Radar : Screen("radar")
-    data object MatchList : Screen("match_list")
+    data object MatchList : Screen("match_list?detectedUids={detectedUids}") {
+        fun createRoute(detectedUids: String = "") = "match_list?detectedUids=$detectedUids"
+    }
     
     // 詳細画面
     data object UserDetail : Screen("user_detail/{userId}") {

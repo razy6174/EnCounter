@@ -1,16 +1,20 @@
 package com.encounter.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.encounter.app.ui.screens.chat.ChatScreen
 import com.encounter.app.ui.screens.help.HelpScreen
 import com.encounter.app.ui.screens.matchlist.MatchListScreen
 import com.encounter.app.ui.screens.profile.ProfileEditScreen
 import com.encounter.app.ui.screens.profile.ProfileSetupScreen
+import com.encounter.app.ui.screens.profile.ProfileViewModel
 import com.encounter.app.ui.screens.profile.TagSelectionScreen
 import com.encounter.app.ui.screens.radar.RadarScreen
 import com.encounter.app.ui.screens.splash.SplashScreen
@@ -24,8 +28,7 @@ import com.encounter.app.ui.screens.userdetail.UserDetailScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    // TODO: デバッグ用に一時的にRadar画面から開始（本番前にSplash.routeに戻す）
-    startDestination: String = Screen.Radar.route  // 元: Screen.Splash.route
+    startDestination: String = Screen.Splash.route
 ) {
     NavHost(
         navController = navController,
@@ -35,7 +38,7 @@ fun AppNavGraph(
         composable(Screen.Splash.route) {
             SplashScreen(
                 onNavigateToSetup = {
-                    navController.navigate(Screen.ProfileSetup.route) {
+                    navController.navigate(Screen.ProfileFlow.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 },
@@ -47,31 +50,53 @@ fun AppNavGraph(
             )
         }
         
-        // プロフィール設定画面
-        composable(Screen.ProfileSetup.route) {
-            ProfileSetupScreen(
-                onNavigateToTags = {
-                    navController.navigate(Screen.TagSelection.route)
+        // プロフィール設定フロー（ViewModelを共有）
+        navigation(
+            startDestination = Screen.ProfileSetup.route,
+            route = Screen.ProfileFlow.route
+        ) {
+            // プロフィール設定画面
+            composable(Screen.ProfileSetup.route) { backStackEntry ->
+                // 親ルートのbackStackEntryからViewModelを取得（共有）
+                // rememberでキャッシュしてrecomposition時のクラッシュを防ぐ
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(Screen.ProfileFlow.route)
                 }
-            )
-        }
-        
-        // タグ選択画面
-        composable(Screen.TagSelection.route) {
-            TagSelectionScreen(
-                onNavigateToRadar = {
-                    navController.navigate(Screen.Radar.route) {
-                        popUpTo(Screen.ProfileSetup.route) { inclusive = true }
-                    }
+                val viewModel: ProfileViewModel = hiltViewModel(parentEntry)
+                
+                ProfileSetupScreen(
+                    onNavigateToTags = {
+                        navController.navigate(Screen.TagSelection.route)
+                    },
+                    viewModel = viewModel
+                )
+            }
+            
+            // タグ選択画面
+            composable(Screen.TagSelection.route) { backStackEntry ->
+                // 親ルートのbackStackEntryからViewModelを取得（共有）
+                // rememberでキャッシュしてrecomposition時のクラッシュを防ぐ
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(Screen.ProfileFlow.route)
                 }
-            )
+                val viewModel: ProfileViewModel = hiltViewModel(parentEntry)
+                
+                TagSelectionScreen(
+                    onNavigateToRadar = {
+                        navController.navigate(Screen.Radar.route) {
+                            popUpTo(Screen.ProfileFlow.route) { inclusive = true }
+                        }
+                    },
+                    viewModel = viewModel
+                )
+            }
         }
         
         // レーダー画面（ホーム）
         composable(Screen.Radar.route) {
             RadarScreen(
-                onNavigateToMatchList = {
-                    navController.navigate(Screen.MatchList.route)
+                onNavigateToMatchList = { detectedUids ->
+                    navController.navigate(Screen.MatchList.createRoute(detectedUids))
                 },
                 onNavigateToProfile = {
                     navController.navigate(Screen.ProfileEdit.route)
@@ -83,7 +108,15 @@ fun AppNavGraph(
         }
         
         // マッチリスト画面
-        composable(Screen.MatchList.route) {
+        composable(
+            route = Screen.MatchList.route,
+            arguments = listOf(
+                navArgument("detectedUids") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) {
             MatchListScreen(
                 onNavigateToUserDetail = { userId ->
                     navController.navigate(Screen.UserDetail.createRoute(userId))
