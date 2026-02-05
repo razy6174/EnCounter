@@ -302,7 +302,7 @@ flowchart TD
 | **4. 開発計画**     | ![Gemini](https://img.shields.io/badge/Gemini-3%20Pro-8E75B2?logo=google&logoColor=white)                                                                | アローダイアグラム作成・アプリ名決定                                                                                  |
 | **5. 環境構築**     | ![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-Claude%20Opus%204.5-000000?logo=githubcopilot&logoColor=white)                           | ディレクトリ構造設計・初期セットアップ。UI/ロジック担当のコンフリクト回避                                             |
 | **6. ロジック実装** | ![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-Claude%20Opus%204.5%20/%20Sonnet%204.5-000000?logo=githubcopilot&logoColor=white) + 人力 | **AI**: コード生成・DI構成<br/>**人間**: 実装フェーズごとの要件定義、実機デバッグ（Logcat確認）、エラー原因調査と特定 |
-| **7. UI実装**       | ![Gemini](https://img.shields.io/badge/Gemini-3%20Pro-8E75B2?logo=google&logoColor=white)                                                                | Jetpack Compose実装・画像生成                                                                                         |
+| **7. UI実装**       | ![Gemini](https://img.shields.io/badge/Gemini-3%20Pro-8E75B2?logo=google&logoColor=white) + 人力                                                          | **AI**: Jetpack Compose実装・UIコンポーネント生成・画像生成<br/>**人間**: 画面設計・要件明確化、デザイン調整・配置微修正、実機での見た目・操作感確認、画像採用判断 |
 | **8. ドキュメント** | ![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-Claude%20Opus%204.5-000000?logo=githubcopilot&logoColor=white)                           | 技術仕様書・README下書き → 人力で修正                                                                                 |
 
 ### 開発体制
