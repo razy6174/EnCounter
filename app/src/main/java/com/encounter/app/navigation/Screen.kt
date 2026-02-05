@@ -17,9 +17,7 @@ sealed class Screen(val route: String) {
     
     // メイン画面
     data object Radar : Screen("radar")
-    data object MatchList : Screen("match_list?detectedUids={detectedUids}") {
-        fun createRoute(detectedUids: String = "") = "match_list?detectedUids=$detectedUids"
-    }
+    data object MatchList : Screen("match_list")
     
     // 詳細画面
     data object UserDetail : Screen("user_detail/{userId}") {

@@ -17,7 +17,7 @@ val RpgGoldDark = Color(0xFFA67C00)  // 影用
 
 // --- セカンダリカラー (Secondary) ---
 // 自然と調和する「フォレストグリーン」
-// 「すれ違い通信中」などの肯定的なステータスに使用
+// 「すれちがい通信中」などの肯定的なステータスに使用
 val RpgGreenSecondary = Color(0xFF558B2F)
 val RpgGreenLight = Color(0xFF85BB5C)
 

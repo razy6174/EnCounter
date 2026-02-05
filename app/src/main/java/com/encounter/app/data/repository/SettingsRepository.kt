@@ -64,6 +64,8 @@ class SettingsRepository @Inject constructor(
         // 初回起動時にBleManagerに設定を適用
         applyBleSensitivity(_scanSensitivity.value)
         applyTxPowerLevel(_txPowerLevel.value)
+        // ステルスモードが有効なら初期化時にアドバタイズを無効化
+        applyStealthMode(_stealthMode.value)
     }
     
     // ========================================
@@ -158,7 +160,22 @@ class SettingsRepository @Inject constructor(
     fun setStealthMode(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_STEALTH_MODE, enabled).apply()
         _stealthMode.value = enabled
+        applyStealthMode(enabled)
     }
+    
+    /**
+     * ステルスモードをBleManagerに適用
+     * ONの場合: アドバタイズを停止（スキャンは継続）
+     * OFFの場合: アドバタイズを許可（RadarViewModelで開始可能に）
+     */
+    private fun applyStealthMode(enabled: Boolean) {
+        bleManager.setStealthMode(enabled)
+    }
+    
+    /**
+     * ステルスモードが有効かどうか（外部から確認用）
+     */
+    fun isStealthModeEnabled(): Boolean = _stealthMode.value
     
     private fun loadStealthMode(): Boolean {
         return prefs.getBoolean(KEY_STEALTH_MODE, false) // デフォルトOFF

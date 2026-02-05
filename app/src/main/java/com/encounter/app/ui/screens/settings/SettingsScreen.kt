@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.encounter.app.ble.ScanSensitivity
 import com.encounter.app.ble.TxPowerLevel
 import com.encounter.app.ui.theme.EnCounterTheme
+import com.encounter.app.ui.utils.rememberSafeNavigateBack
 
 /**
  * 設定画面（外側）
@@ -59,9 +60,12 @@ fun SettingsScreen(
     // ========================================
     val uiState by viewModel.uiState.collectAsState()
     
+    // 二重タップ防止付きの安全な戻るナビゲーション
+    val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
+    
     SettingsScreenContent(
         uiState = uiState,
-        onNavigateBack = onNavigateBack,
+        onNavigateBack = safeNavigateBack,
         onScanSensitivityChanged = { viewModel.setScanSensitivity(it) },
         onTxPowerLevelChanged = { viewModel.setTxPowerLevel(it) },
         onVibrationEnabledChanged = { viewModel.setVibrationEnabled(it) },
@@ -118,7 +122,7 @@ fun SettingsScreenContent(
             }
             
             // BLE設定セクション
-            SettingsSectionCard(title = "すれ違い検知設定") {
+            SettingsSectionCard(title = "すれちがい検知設定") {
                 // 受信感度
                 SettingsSubsection(title = "受信感度（検知距離）") {
                     ScanSensitivitySelector(

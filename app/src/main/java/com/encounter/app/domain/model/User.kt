@@ -21,6 +21,9 @@ data class User(
  * ユーザーステータス（「気分」ステータス）
  * プロダクトの核心機能 - 多彩な気分表現を実現
  * 
+ * ステルス機能は設定画面の「ステルスモード」で管理するため、
+ * ステータスからは削除済み
+ * 
  * 担当: 久米（Backend）
  */
 enum class UserStatus(val displayName: String, val emoji: String) {
@@ -35,32 +38,31 @@ enum class UserStatus(val displayName: String, val emoji: String) {
     COMMUTING("移動中", "🚃"),
     WORKING("作業中", "💻"),
     
-    // 非アクティブ系（マッチングOFF）
+    // 非アクティブ系
     BUSY("忙しい", "🔴"),
-    STEALTH("ステルス", "👁️"),
     OFFLINE("オフライン", "⚫");
     
     companion object {
         /**
-         * マッチング対象となるステータス一覧
-         * これらのステータスの場合、すれ違い検知の対象となる
+         * アクティブなステータス一覧（OFFLINE以外すべて）
+         * アクティブなステータス同士でマッチング判定を行う
          */
-        val matchableStatuses = setOf(
-            OPEN, BORED, LOOKING_FOR_HELP, GAME_PARTNER, COFFEE, COMMUTING, WORKING
-        )
+        val activeStatuses = entries.filter { it != OFFLINE }.toSet()
         
         /**
-         * ステータスがマッチング対象かどうかを判定
+         * ステータスがアクティブかどうかを判定
+         * OFFLINEのみ非アクティブ
          */
-        fun UserStatus.isMatchable(): Boolean = this in matchableStatuses
+        fun UserStatus.isActive(): Boolean = this != OFFLINE
         
         /**
          * 文字列からUserStatusを取得（Firestore互換用）
-         * 旧バージョン（WANTED）もサポート
+         * 旧バージョン（WANTED, STEALTH）もサポート
          */
         fun fromString(value: String): UserStatus {
             return when (value.uppercase()) {
                 "WANTED" -> OPEN  // 旧バージョン互換
+                "STEALTH" -> OFFLINE  // STEALTH廃止→OFFLINE扱い
                 else -> entries.find { it.name == value.uppercase() } ?: OFFLINE
             }
         }

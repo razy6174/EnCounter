@@ -96,8 +96,12 @@ fun AppNavGraph(
         // レーダー画面（ホーム）
         composable(Screen.Radar.route) {
             RadarScreen(
-                onNavigateToMatchList = { detectedUids ->
-                    navController.navigate(Screen.MatchList.createRoute(detectedUids))
+                onNavigateToMatchList = { _ ->
+                    // 引数なしで遷移（履歴はリポジトリから取得）
+                    navController.navigate(Screen.MatchList.route)
+                },
+                onNavigateToUserDetail = { userId ->
+                    navController.navigate(Screen.UserDetail.createRoute(userId))
                 },
                 onNavigateToProfile = {
                     navController.navigate(Screen.ProfileEdit.route)
@@ -111,16 +115,8 @@ fun AppNavGraph(
             )
         }
         
-        // マッチリスト画面
-        composable(
-            route = Screen.MatchList.route,
-            arguments = listOf(
-                navArgument("detectedUids") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                }
-            )
-        ) {
+        // すれちがい図鑑画面
+        composable(route = Screen.MatchList.route) {
             MatchListScreen(
                 onNavigateToUserDetail = { userId ->
                     navController.navigate(Screen.UserDetail.createRoute(userId))

@@ -4,14 +4,22 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -21,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,43 +38,36 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.encounter.app.domain.model.EncounterRecord
 import com.encounter.app.domain.model.User
 import com.encounter.app.domain.model.UserStatus
 import com.encounter.app.ui.theme.EnCounterTheme
+import com.encounter.app.ui.utils.TimeUtils
+import com.encounter.app.ui.utils.rememberSafeNavigateBack
 
 /**
- * すれちがいリスト画面（外側）
- * 検知したユーザーの一覧を表示
+ * すれちがい図鑑画面（外側）
+ * 今まですれ違った人の履歴を表示
  * 
  * 担当: 昆野（Frontend）- UI実装
  * ViewModel連携: 久米（Backend）- 実装済み
- * 
- * 注意: 以下のセクションは久米が実装済みのため変更禁止
- * - ViewModelの取得（hiltViewModel）
- * - uiState/uiEventの監視
- * - ViewModel関数の呼び出し（onClick内）
  */
 @Composable
 fun MatchListScreen(
     onNavigateToUserDetail: (String) -> Unit,
     onNavigateBack: () -> Unit,
-    // ========================================
-    // 久米実装: 変更禁止
-    // ========================================
     viewModel: MatchListViewModel = hiltViewModel()
 ) {
-    // ========================================
-    // 久米実装: 変更禁止（状態監視）
-    // ========================================
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    // ========================================
-    // 久米実装: 変更禁止（UIイベント監視）
-    // ========================================
+    // 二重タップ防止付きの安全な戻るナビゲーション
+    val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
+    
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -79,21 +81,21 @@ fun MatchListScreen(
         }
     }
     
-    // 内側のContent関数を呼び出す
     MatchListScreenContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onUserClick = { userId -> viewModel.onUserClick(userId) },
+        onDeleteUser = { uidPrefix -> viewModel.deleteEncounter(uidPrefix) },
+        onDeleteAllClick = { viewModel.showDeleteAllConfirmDialog() },
+        onDeleteAllConfirm = { viewModel.clearAllHistory() },
+        onDeleteAllDismiss = { viewModel.hideDeleteAllConfirmDialog() },
         onRefresh = { viewModel.refreshUsers() },
-        onNavigateBack = onNavigateBack
+        onNavigateBack = safeNavigateBack
     )
 }
 
 /**
- * すれちがいリスト画面のコンテンツ（内側）
- * 状態を引数で受け取るため、Previewが可能
- * 
- * 昆野担当: 以下は自由に編集可能
+ * すれちがい図鑑画面のコンテンツ（内側）
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,31 +103,54 @@ fun MatchListScreenContent(
     uiState: MatchListUiState,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onUserClick: (String) -> Unit,
+    onDeleteUser: (String) -> Unit,
+    onDeleteAllClick: () -> Unit,
+    onDeleteAllConfirm: () -> Unit,
+    onDeleteAllDismiss: () -> Unit,
     onRefresh: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    // 全削除確認ダイアログ
+    if (uiState.showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = onDeleteAllDismiss,
+            title = { Text("すべて削除しますか？") },
+            text = { Text("すれちがい図鑑のすべての記録が削除されます。この操作は取り消せません。") },
+            confirmButton = {
+                TextButton(onClick = onDeleteAllConfirm) {
+                    Text("削除", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDeleteAllDismiss) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                // TODO: 昆野 - タイトルのデザインを改善
-                title = { Text("すれちがいリスト") },
+                title = { Text("すれちがい図鑑") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る")
                     }
+                },
+                actions = {
+                    if (uiState.filteredUsers.isNotEmpty()) {
+                        IconButton(onClick = onDeleteAllClick) {
+                            Icon(Icons.Default.Delete, contentDescription = "全削除")
+                        }
+                    }
                 }
-                // TODO: 昆野 - リフレッシュボタンを追加（onRefreshを呼び出す）
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        // ========================================
-        // 久米実装: 条件分岐は変更禁止
-        // 昆野担当: 各状態のUIデザインは変更可能
-        // ========================================
         when {
             uiState.isLoading -> {
-                // TODO: 昆野 - ローディング表示のデザインを改善
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -135,8 +160,7 @@ fun MatchListScreenContent(
                     CircularProgressIndicator()
                 }
             }
-            uiState.users.isEmpty() -> {
-                // TODO: 昆野 - 空状態のデザインを改善（イラストなど）
+            uiState.filteredUsers.isEmpty() -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -166,14 +190,14 @@ fun MatchListScreenContent(
                         .padding(paddingValues)
                         .padding(horizontal = 16.dp)
                 ) {
-                    items(uiState.users, key = { it.uid }) { user ->
-                        // ========================================
-                        // 久米実装: onClickは変更禁止
-                        // 昆野担当: カードのデザインは変更可能
-                        // ========================================
+                    items(uiState.filteredUsers, key = { it.uid }) { user ->
+                        // 対応するEncounterRecordからtimestampを取得
+                        val encounterRecord = uiState.encounterRecords.find { it.uidPrefix == user.uidPrefix }
                         MatchUserCard(
                             user = user,
-                            onClick = { onUserClick(user.uid) }
+                            lastEncounteredAt = encounterRecord?.timestamp ?: 0L,
+                            onClick = { onUserClick(user.uid) },
+                            onDelete = { onDeleteUser(user.uidPrefix) }
                         )
                     }
                 }
@@ -183,41 +207,82 @@ fun MatchListScreenContent(
 }
 
 /**
- * ユーザーカードコンポーネント
- * 
- * 昆野担当: デザインは自由に変更可能
+ * ユーザーカードコンポーネント（削除ボタン付き）
  */
 @Composable
 fun MatchUserCard(
     user: User,
-    onClick: () -> Unit
+    lastEncounteredAt: Long = 0L,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
-    // TODO: 昆野 - カードのデザインを改善（アバター、ステータスバッジなど）
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // ステータス絵文字
             Text(
-                text = user.displayName,
-                style = MaterialTheme.typography.titleMedium
+                text = user.status.emoji,
+                style = MaterialTheme.typography.headlineMedium
             )
-            if (user.tags.isNotEmpty()) {
-                Text(
-                    text = user.tags.joinToString(" ") { "#$it" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // ユーザー情報
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = user.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // 時間表示を追加
+                    if (lastEncounteredAt > 0) {
+                        Text(
+                            text = TimeUtils.formatRelativeTime(lastEncounteredAt),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                if (user.tags.isNotEmpty()) {
+                    Text(
+                        text = user.tags.take(3).joinToString(" ") { "#$it" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                if (user.comment.isNotEmpty()) {
+                    Text(
+                        text = user.comment,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
             }
-            if (user.comment.isNotEmpty()) {
-                Text(
-                    text = user.comment,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            
+            // 削除ボタン
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "削除",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -230,9 +295,10 @@ private fun MatchListScreenPreview() {
     EnCounterTheme {
         MatchListScreenContent(
             uiState = MatchListUiState(
-                users = listOf(
+                filteredUsers = listOf(
                     User(
                         uid = "1",
+                        uidPrefix = "prefix1",
                         displayName = "山田太郎",
                         comment = "よろしくお願いします！",
                         tags = listOf("Android", "Kotlin"),
@@ -240,6 +306,7 @@ private fun MatchListScreenPreview() {
                     ),
                     User(
                         uid = "2",
+                        uidPrefix = "prefix2",
                         displayName = "佐藤花子",
                         comment = "サウナ好き",
                         tags = listOf("サウナ", "Java"),
@@ -248,6 +315,10 @@ private fun MatchListScreenPreview() {
                 )
             ),
             onUserClick = {},
+            onDeleteUser = {},
+            onDeleteAllClick = {},
+            onDeleteAllConfirm = {},
+            onDeleteAllDismiss = {},
             onRefresh = {},
             onNavigateBack = {}
         )
@@ -261,6 +332,10 @@ private fun MatchListScreenEmptyPreview() {
         MatchListScreenContent(
             uiState = MatchListUiState(),
             onUserClick = {},
+            onDeleteUser = {},
+            onDeleteAllClick = {},
+            onDeleteAllConfirm = {},
+            onDeleteAllDismiss = {},
             onRefresh = {},
             onNavigateBack = {}
         )
@@ -274,6 +349,10 @@ private fun MatchListScreenLoadingPreview() {
         MatchListScreenContent(
             uiState = MatchListUiState(isLoading = true),
             onUserClick = {},
+            onDeleteUser = {},
+            onDeleteAllClick = {},
+            onDeleteAllConfirm = {},
+            onDeleteAllDismiss = {},
             onRefresh = {},
             onNavigateBack = {}
         )
