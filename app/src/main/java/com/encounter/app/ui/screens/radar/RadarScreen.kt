@@ -114,8 +114,10 @@ fun RadarScreen(
         },
         onNavigateToProfile = onNavigateToProfile,
         onNavigateToHelp = onNavigateToHelp,
-        // 修正: Backendのメソッド名(toggleScanning)を使用しつつ、UI上の意味は「すれ違い通信」とする
-        onToggleEncounter = { viewModel.toggleScanning() },
+        // ========================================
+        // 🔒 久米実装: toggleEncounter()を使用（スキャン+アドバタイズ同時実行）
+        // ========================================
+        onToggleEncounter = { viewModel.toggleEncounter() },
         onClearDetectedDevices = { viewModel.clearDetectedDevices() }
     )
 }
