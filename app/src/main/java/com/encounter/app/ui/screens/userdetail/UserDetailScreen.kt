@@ -35,6 +35,20 @@ import com.encounter.app.domain.model.User
 import com.encounter.app.domain.model.UserStatus
 import com.encounter.app.ui.theme.EnCounterTheme
 import com.encounter.app.ui.utils.rememberSafeNavigateBack
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.layout.size
+import com.encounter.app.R
 
 /**
  * ユーザー詳細画面（外側）
@@ -47,6 +61,7 @@ import com.encounter.app.ui.utils.rememberSafeNavigateBack
  * - uiState/uiEventの監視
  * - ViewModel関数の呼び出し（onClick内）
  */
+
 @Composable
 fun UserDetailScreen(
     userId: String,
@@ -62,10 +77,10 @@ fun UserDetailScreen(
     // ========================================
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
     // 二重タップ防止付きの安全な戻るナビゲーション
     val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
-    
+
     // ========================================
     // 久米実装: 変更禁止（UIイベント監視）
     // ========================================
@@ -81,7 +96,7 @@ fun UserDetailScreen(
             }
         }
     }
-    
+
     // 内側のContent関数を呼び出す
     UserDetailScreenContent(
         uiState = uiState,
@@ -89,6 +104,49 @@ fun UserDetailScreen(
         onStartChat = { viewModel.startChat() },
         onNavigateBack = safeNavigateBack
     )
+}
+@Composable
+fun RpgSpeechBubble(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    // 吹き出しの背景色（テーマに合わせて調整可）
+    val bubbleColor = MaterialTheme.colorScheme.surfaceVariant
+    // 文字色
+    val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(horizontal = 16.dp) // 画面端にくっつきすぎないように
+    ) {
+        // 1. しっぽ部分（上向きの三角形）
+        Canvas(modifier = Modifier.height(12.dp).fillMaxWidth()) {
+            val trianglePath = Path().apply {
+                // 中央上部へ
+                moveTo(center.x, 0f)
+                // 右下へ
+                lineTo(center.x + 12.dp.toPx(), size.height)
+                // 左下へ
+                lineTo(center.x - 12.dp.toPx(), size.height)
+                close()
+            }
+            drawPath(path = trianglePath, color = bubbleColor)
+        }
+
+        // 2. 本体部分
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = bubbleColor,
+            modifier = Modifier.widthIn(max = 320.dp) // 横幅が広がりすぎないように制限
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = contentColor,
+                modifier = Modifier.padding(16.dp) // 文字周りの余白
+            )
+        }
+    }
 }
 
 /**
@@ -160,9 +218,12 @@ fun UserDetailScreenContent(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // TODO: 昆野 - アバター画像を表示（将来的に実装）
-                    Text(
-                        text = "👤",
-                        style = MaterialTheme.typography.displayLarge
+                    Image(
+                        painter = painterResource(id = R.drawable.img_adventurer), // ファイル名に合わせて変更
+                        contentDescription = "ユーザーアイコン",
+                        contentScale = ContentScale.Crop, // 画像を枠いっぱいにトリミング
+                        modifier = Modifier
+                            .size(120.dp) // サイズはお好みで調整（100.dp ~ 140.dpくらいが適当）
                     )
                     
                     // TODO: 昆野 - ユーザー名のデザインを改善
@@ -187,10 +248,10 @@ fun UserDetailScreenContent(
                     }
                     
                     // TODO: 昆野 - コメントのデザインを改善
+                    // TODO: 昆野 - コメントのデザインを改善
                     if (user.comment.isNotEmpty()) {
-                        Text(
-                            text = user.comment,
-                            style = MaterialTheme.typography.bodyMedium
+                        RpgSpeechBubble(
+                            text = user.comment
                         )
                     }
                     

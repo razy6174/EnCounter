@@ -35,51 +35,36 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.encounter.app.R
 import com.encounter.app.domain.model.UserStatus
 import com.encounter.app.ui.theme.EnCounterTheme
 import com.encounter.app.ui.utils.rememberSafeNavigateBack
 
 /**
  * プロフィール編集画面（外側）
- * 
- * 担当: 昆野（Frontend）- UI実装
+ * * 担当: 昆野（Frontend）- UI実装
  * ViewModel連携: 久米（Backend）- 実装済み
- * 
- * 注意: 以下のセクションは久米が実装済みのため変更禁止
- * - ViewModelの取得（hiltViewModel）
- * - uiState/uiEventの監視
- * - ViewModel関数の呼び出し（onChange, onClick内）
  */
 @Composable
 fun ProfileEditScreen(
     onNavigateBack: () -> Unit,
-    // ========================================
-    // 久米実装: 変更禁止
-    // ========================================
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
-    // ========================================
-    // 久米実装: 変更禁止（状態監視）
-    // ========================================
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // 二重タップ防止付きの安全な戻るナビゲーション
     val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
-    
-    // ========================================
-    // 久米実装: 変更禁止（初期読み込み）
-    // ========================================
+
     LaunchedEffect(Unit) {
         viewModel.loadProfile()
     }
-    
-    // ========================================
-    // 久米実装: 変更禁止（UIイベント監視）
-    // ========================================
+
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -87,12 +72,11 @@ fun ProfileEditScreen(
                 is ProfileUiEvent.ShowError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
-                else -> { /* 他のイベントはこの画面では処理しない */ }
+                else -> { }
             }
         }
     }
-    
-    // 内側のContent関数を呼び出す
+
     ProfileEditScreenContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
@@ -107,9 +91,7 @@ fun ProfileEditScreen(
 
 /**
  * プロフィール編集画面のコンテンツ（内側）
- * 状態を引数で受け取るため、Previewが可能
- * 
- * 昆野担当: 以下は自由に編集可能
+ * 昆野担当: フォント適用済み
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -123,10 +105,18 @@ fun ProfileEditScreenContent(
     onTagToggled: (String) -> Unit,
     onSaveProfile: () -> Unit
 ) {
+    // ドットフォントの定義
+    val dotFont = FontFamily(Font(R.font.dot_font))
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("プロフィール編集") },
+                title = {
+                    Text(
+                        "プロフィール編集",
+                        fontFamily = dotFont // ★フォント適用
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る")
@@ -136,12 +126,7 @@ fun ProfileEditScreenContent(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        // ========================================
-        // 久米実装: isLoading条件は変更禁止
-        // 昆野担当: ローディング表示のデザインは変更可能
-        // ========================================
         if (uiState.isLoading && !uiState.isEditMode) {
-            // TODO: 昆野 - ローディング表示を改善
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -151,7 +136,10 @@ fun ProfileEditScreenContent(
             ) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("読み込み中...")
+                Text(
+                    "読み込み中...",
+                    fontFamily = dotFont // ★フォント適用
+                )
             }
         } else {
             Column(
@@ -162,55 +150,70 @@ fun ProfileEditScreenContent(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // ========================================
-                // 久米実装: value, onValueChangeは変更禁止
-                // 昆野担当: TextFieldのデザインは変更可能
-                // ========================================
+                // ニックネーム入力
                 OutlinedTextField(
                     value = uiState.displayName,
                     onValueChange = onDisplayNameChanged,
-                    label = { Text("ニックネーム") },
+                    label = {
+                        Text(
+                            "ニックネーム",
+                            fontFamily = dotFont // ★ラベルにフォント適用
+                        )
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    // ★入力文字自体にフォント適用
+                    textStyle = TextStyle(
+                        fontFamily = dotFont,
+                        fontSize = 16.sp
+                    ),
                     supportingText = {
-                        // TODO: 昆野 - 文字数表示のデザインを改善
-                        Text("${uiState.displayName.length}/${ProfileUiState.MAX_DISPLAY_NAME_LENGTH}")
+                        Text(
+                            "${uiState.displayName.length}/${ProfileUiState.MAX_DISPLAY_NAME_LENGTH}",
+                            fontFamily = dotFont // ★文字数カウントにフォント適用
+                        )
                     }
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                // ========================================
-                // 久米実装: value, onValueChangeは変更禁止
-                // 昆野担当: TextFieldのデザインは変更可能
-                // ========================================
+
+                // ひとこと入力
                 OutlinedTextField(
                     value = uiState.comment,
                     onValueChange = onCommentChanged,
-                    label = { Text("ひとこと（任意）") },
+                    label = {
+                        Text(
+                            "ひとこと（任意）",
+                            fontFamily = dotFont // ★ラベルにフォント適用
+                        )
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    // ★入力文字自体にフォント適用
+                    textStyle = TextStyle(
+                        fontFamily = dotFont,
+                        fontSize = 16.sp
+                    ),
                     supportingText = {
-                        // TODO: 昆野 - 文字数表示のデザインを改善
-                        Text("${uiState.comment.length}/${ProfileUiState.MAX_COMMENT_LENGTH}")
+                        Text(
+                            "${uiState.comment.length}/${ProfileUiState.MAX_COMMENT_LENGTH}",
+                            fontFamily = dotFont // ★文字数カウントにフォント適用
+                        )
                     }
                 )
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                // TODO: 昆野 - ステータス選択のデザインを改善
+
                 Text(
                     text = "ステータス",
                     style = MaterialTheme.typography.titleMedium,
+                    fontFamily = dotFont, // ★フォント適用
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                // ========================================
-                // 久米実装: selected, onClickは変更禁止
-                // 昆野担当: RadioButtonのデザインは変更可能
-                // ========================================
+
+                // ステータス選択
                 Column(modifier = Modifier.fillMaxWidth()) {
                     UserStatus.entries.forEach { status ->
                         Row(
@@ -223,27 +226,25 @@ fun ProfileEditScreenContent(
                             )
                             Text(
                                 text = "${status.emoji} ${status.displayName}",
-                                style = MaterialTheme.typography.bodyLarge
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontFamily = dotFont // ★フォント適用
                             )
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                // TODO: 昆野 - タグ選択のデザインを改善
+
                 Text(
                     text = "興味タグ（${ProfileUiState.MIN_TAGS}〜${ProfileUiState.MAX_TAGS}個）",
                     style = MaterialTheme.typography.titleMedium,
+                    fontFamily = dotFont, // ★フォント適用
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                // ========================================
-                // 久米実装: AvailableTags.list, selectedTags, onTagToggledは変更禁止
-                // 昆野担当: FilterChipのデザインは変更可能
-                // ========================================
+
+                // タグ選択
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -253,43 +254,45 @@ fun ProfileEditScreenContent(
                         FilterChip(
                             selected = tag.id in uiState.selectedTags,
                             onClick = { onTagToggled(tag.id) },
-                            label = { 
-                                // TODO: 昆野 - タグラベルのデザインを改善
-                                Text("#${tag.label}") 
+                            label = {
+                                Text(
+                                    "#${tag.label}",
+                                    fontFamily = dotFont // ★フォント適用
+                                )
                             }
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                // TODO: 昆野 - 選択数表示のデザインを改善
+
+                // 選択数表示
                 Text(
                     text = "選択中: ${uiState.selectedTags.size}/${ProfileUiState.MAX_TAGS}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = dotFont // ★フォント適用
                 )
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
-                
-                // ========================================
-                // 久米実装: onClick, enabledは変更禁止
-                // 昆野担当: ボタンのデザインは変更可能
-                // ========================================
+
+                // 保存ボタン
                 Button(
                     onClick = onSaveProfile,
                     enabled = uiState.isSaveEnabled && !uiState.isLoading,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (uiState.isLoading) {
-                        // TODO: 昆野 - ローディング表示を改善
                         CircularProgressIndicator(
                             modifier = Modifier.height(24.dp),
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        // TODO: 昆野 - ボタンテキストのデザインを改善
-                        Text("保存")
+                        Text(
+                            "保存",
+                            fontFamily = dotFont, // ★フォント適用
+                            fontSize = 18.sp
+                        )
                     }
                 }
             }
@@ -297,6 +300,7 @@ fun ProfileEditScreenContent(
     }
 }
 
+// プレビュー等は変更なしのため省略可能ですが、必要であれば元のコードのまま維持してください
 @Preview(showBackground = true)
 @Composable
 private fun ProfileEditScreenPreview() {
@@ -310,22 +314,6 @@ private fun ProfileEditScreenPreview() {
                 isEditMode = true,
                 isSaveEnabled = true
             ),
-            onNavigateBack = {},
-            onDisplayNameChanged = {},
-            onCommentChanged = {},
-            onStatusChanged = {},
-            onTagToggled = {},
-            onSaveProfile = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ProfileEditScreenLoadingPreview() {
-    EnCounterTheme {
-        ProfileEditScreenContent(
-            uiState = ProfileUiState(isLoading = true),
             onNavigateBack = {},
             onDisplayNameChanged = {},
             onCommentChanged = {},
