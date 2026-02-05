@@ -22,10 +22,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle // 追加
+import androidx.compose.ui.text.font.Font // 追加
+import androidx.compose.ui.text.font.FontFamily // 追加
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp // 文字サイズ調整用に追加
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.encounter.app.R // リソースIDのために必要（パッケージ名は環境に合わせてください）
 import com.encounter.app.ui.theme.EnCounterTheme
+import androidx.compose.material3.ButtonDefaults
 
 /**
  * プロフィール設定画面（外側）
@@ -91,6 +97,10 @@ fun ProfileSetupScreenContent(
     onCommentChanged: (String) -> Unit,
     onNavigateToTags: () -> Unit
 ) {
+    // フォントファミリーを定義
+    // 注意: res/font/dot_font.ttf が存在すること
+    val dotFont = FontFamily(Font(R.font.dot_font))
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -102,69 +112,98 @@ fun ProfileSetupScreenContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // TODO: 昆野 - タイトルのデザインを改善
+            // タイトル
             Text(
                 text = "プロフィール設定",
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                fontFamily = dotFont // ★フォント適用
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
-            // ========================================
-            // 久米実装: value, onValueChangeは変更禁止
-            // 昆野担当: TextFieldのデザインは変更可能
-            // ========================================
+
+            // ニックネーム入力欄
             OutlinedTextField(
                 value = uiState.displayName,
                 onValueChange = onDisplayNameChanged,
-                label = { Text("ニックネーム") },
+                label = {
+                    Text(
+                        "ニックネーム",
+                        fontFamily = dotFont // ★ラベルにフォント適用
+                    )
+                },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+                // 入力文字自体のスタイル
+                textStyle = TextStyle(
+                    fontFamily = dotFont, // ★入力文字にフォント適用
+                    fontSize = 18.sp
+                ),
                 supportingText = {
-                    // TODO: 昆野 - 文字数表示のデザインを改善
-                    Text("${uiState.displayName.length}/${ProfileUiState.MAX_DISPLAY_NAME_LENGTH}")
+                    Text(
+                        "${uiState.displayName.length}/${ProfileUiState.MAX_DISPLAY_NAME_LENGTH}",
+                        fontFamily = dotFont // ★文字数カウントにフォント適用
+                    )
                 },
                 isError = uiState.displayName.length > ProfileUiState.MAX_DISPLAY_NAME_LENGTH
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // ========================================
-            // 久米実装: value, onValueChangeは変更禁止
-            // 昆野担当: TextFieldのデザインは変更可能
-            // ========================================
+
+            // ひとこと入力欄
             OutlinedTextField(
                 value = uiState.comment,
                 onValueChange = onCommentChanged,
-                label = { Text("ひとこと（任意）") },
+                label = {
+                    Text(
+                        "ひとこと（任意）",
+                        fontFamily = dotFont // ★ラベルにフォント適用
+                    )
+                },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+                // 入力文字自体のスタイル
+                textStyle = TextStyle(
+                    fontFamily = dotFont, // ★入力文字にフォント適用
+                    fontSize = 18.sp
+                ),
                 supportingText = {
-                    // TODO: 昆野 - 文字数表示のデザインを改善
-                    Text("${uiState.comment.length}/${ProfileUiState.MAX_COMMENT_LENGTH}")
+                    Text(
+                        "${uiState.comment.length}/${ProfileUiState.MAX_COMMENT_LENGTH}",
+                        fontFamily = dotFont // ★文字数カウントにフォント適用
+                    )
                 }
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
-            // ========================================
-            // 久米実装: onClick, enabledは変更禁止
-            // 昆野担当: ボタンのデザインは変更可能
-            // ========================================
+
+            // 次へボタン
             Button(
                 onClick = onNavigateToTags,
                 enabled = uiState.displayName.isNotBlank() && !uiState.isLoading,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                // ★ ここに追加！RadarScreenと同じ書き方です
+                colors = ButtonDefaults.buttonColors(
+                    // 背景を secondary (緑) にする
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    // 中身（文字）を onSecondary (白) にする
+                    contentColor = MaterialTheme.colorScheme.onSecondary,
+                    // 無効時の色も指定しておくと丁寧
+                    disabledContainerColor = androidx.compose.ui.graphics.Color.Gray,
+                    disabledContentColor = androidx.compose.ui.graphics.Color.White
+                )
             ) {
                 if (uiState.isLoading) {
-                    // TODO: 昆野 - ローディング表示を改善
+                    // 背景が緑になるので、グルグルは白 (onSecondary) にする
                     CircularProgressIndicator(
                         modifier = Modifier.height(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = MaterialTheme.colorScheme.onSecondary
                     )
                 } else {
-                    // TODO: 昆野 - ボタンテキストのデザインを改善
-                    Text("次へ")
+                    Text(
+                        "次へ",
+                        fontFamily = dotFont,
+                        fontSize = 18.sp
+                    )
                 }
             }
         }
