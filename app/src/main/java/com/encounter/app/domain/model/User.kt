@@ -8,6 +8,8 @@ package com.encounter.app.domain.model
  */
 data class User(
     val uid: String = "",
+    /** BLE通信用のUIDプレフィックス（16文字） */
+    val uidPrefix: String = "",
     val displayName: String = "",
     val comment: String = "",
     val status: UserStatus = UserStatus.OFFLINE,

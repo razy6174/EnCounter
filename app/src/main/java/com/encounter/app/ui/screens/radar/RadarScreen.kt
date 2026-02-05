@@ -50,7 +50,7 @@ import com.encounter.app.ui.theme.EnCounterTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadarScreen(
-    onNavigateToMatchList: () -> Unit = {},
+    onNavigateToMatchList: (detectedUids: String) -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToHelp: () -> Unit = {},
     // ========================================
@@ -101,7 +101,11 @@ fun RadarScreen(
     RadarScreenContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
-        onNavigateToMatchList = onNavigateToMatchList,
+        onNavigateToMatchList = { 
+            // detectedDevicesをカンマ区切り文字列に変換して渡す
+            val uidsString = uiState.detectedDevices.joinToString(",")
+            onNavigateToMatchList(uidsString)
+        },
         onNavigateToProfile = onNavigateToProfile,
         onNavigateToHelp = onNavigateToHelp,
         // 修正: Backendのメソッド名(toggleScanning)を使用しつつ、UI上の意味は「すれ違い通信」とする

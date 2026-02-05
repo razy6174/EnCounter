@@ -109,4 +109,44 @@ class ChatRepository @Inject constructor(
         
         awaitClose { listener.remove() }
     }
+    
+    /**
+     * チャットルームを取得
+     */
+    suspend fun getChatRoom(roomId: String): Result<ChatRoom> {
+        return try {
+            val snapshot = firestore.collection("chatRooms")
+                .document(roomId)
+                .get()
+                .await()
+            val room = snapshot.toObject(ChatRoom::class.java)
+                ?: throw Exception("ChatRoom not found")
+            Result.success(room)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * ユーザーが参加しているチャットルーム一覧を取得
+     */
+    fun getUserChatRooms(userId: String): Flow<List<ChatRoom>> = callbackFlow {
+        val listener = firestore.collection("chatRooms")
+            .whereArrayContains("participants", userId)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                
+                val rooms = snapshot?.documents?.mapNotNull {
+                    it.toObject(ChatRoom::class.java)
+                } ?: emptyList()
+                
+                trySend(rooms)
+            }
+        
+        awaitClose { listener.remove() }
+    }
 }
