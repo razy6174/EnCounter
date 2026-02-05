@@ -42,9 +42,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.encounter.app.domain.model.EncounterRecord
 import com.encounter.app.domain.model.User
 import com.encounter.app.domain.model.UserStatus
 import com.encounter.app.ui.theme.EnCounterTheme
+import com.encounter.app.ui.utils.TimeUtils
+import com.encounter.app.ui.utils.rememberSafeNavigateBack
 
 /**
  * すれちがい図鑑画面（外側）
@@ -61,6 +64,9 @@ fun MatchListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // 二重タップ防止付きの安全な戻るナビゲーション
+    val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
     
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
@@ -84,7 +90,7 @@ fun MatchListScreen(
         onDeleteAllConfirm = { viewModel.clearAllHistory() },
         onDeleteAllDismiss = { viewModel.hideDeleteAllConfirmDialog() },
         onRefresh = { viewModel.refreshUsers() },
-        onNavigateBack = onNavigateBack
+        onNavigateBack = safeNavigateBack
     )
 }
 
@@ -185,8 +191,11 @@ fun MatchListScreenContent(
                         .padding(horizontal = 16.dp)
                 ) {
                     items(uiState.filteredUsers, key = { it.uid }) { user ->
+                        // 対応するEncounterRecordからtimestampを取得
+                        val encounterRecord = uiState.encounterRecords.find { it.uidPrefix == user.uidPrefix }
                         MatchUserCard(
                             user = user,
+                            lastEncounteredAt = encounterRecord?.timestamp ?: 0L,
                             onClick = { onUserClick(user.uid) },
                             onDelete = { onDeleteUser(user.uidPrefix) }
                         )
@@ -203,6 +212,7 @@ fun MatchListScreenContent(
 @Composable
 fun MatchUserCard(
     user: User,
+    lastEncounteredAt: Long = 0L,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -228,11 +238,25 @@ fun MatchUserCard(
             
             // ユーザー情報
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = user.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = user.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // 時間表示を追加
+                    if (lastEncounteredAt > 0) {
+                        Text(
+                            text = TimeUtils.formatRelativeTime(lastEncounteredAt),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 if (user.tags.isNotEmpty()) {
                     Text(
                         text = user.tags.take(3).joinToString(" ") { "#$it" },

@@ -37,6 +37,7 @@ data class RadarUiState(
     val detectedDeviceCount: Int = 0,
     val detectedDevices: Set<String> = emptySet(),
     val detectedUsers: Map<String, User> = emptyMap(),  // 検知ユーザーの詳細情報
+    val detectedTimestamps: Map<String, Long> = emptyMap(),  // 検知時刻
     val isForceDetectionMode: Boolean = false,
     val errorMessage: String? = null
 ) {
@@ -253,10 +254,12 @@ class RadarViewModel @Inject constructor(
         Log.d("RadarViewModel", "Adding ${detectedUser.displayName} to detected devices")
         bleManager.addDetectedDevice(uidPrefix)
         
-        // ユーザー情報をUIに反映
+        // ユーザー情報をUIに反映（検知時刻も記録）
+        val detectionTimestamp = System.currentTimeMillis()
         _uiState.update { state ->
             state.copy(
-                detectedUsers = state.detectedUsers + (uidPrefix to detectedUser)
+                detectedUsers = state.detectedUsers + (uidPrefix to detectedUser),
+                detectedTimestamps = state.detectedTimestamps + (uidPrefix to detectionTimestamp)
             )
         }
         
@@ -399,10 +402,13 @@ class RadarViewModel @Inject constructor(
     /**
      * 検知リストをクリア（現在のセッションのみ）
      * 履歴は残る
+     * Firebaseキャッシュもクリアし、次回検知時に最新情報を取得
      */
     fun clearDetectedDevices() {
+        Log.d("RadarViewModel", "Clearing detected devices and user cache")
         bleManager.clearDetectedDevices()
-        _uiState.update { it.copy(detectedUsers = emptyMap()) }
+        userRepository.clearUserCache()  // 次回検知時に最新情報を取得
+        _uiState.update { it.copy(detectedUsers = emptyMap(), detectedTimestamps = emptyMap()) }
     }
     
     /**

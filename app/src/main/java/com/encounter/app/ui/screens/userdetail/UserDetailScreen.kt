@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.encounter.app.domain.model.User
 import com.encounter.app.domain.model.UserStatus
 import com.encounter.app.ui.theme.EnCounterTheme
+import com.encounter.app.ui.utils.rememberSafeNavigateBack
 
 /**
  * ユーザー詳細画面（外側）
@@ -62,6 +63,9 @@ fun UserDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
+    // 二重タップ防止付きの安全な戻るナビゲーション
+    val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
+    
     // ========================================
     // 久米実装: 変更禁止（UIイベント監視）
     // ========================================
@@ -83,7 +87,7 @@ fun UserDetailScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onStartChat = { viewModel.startChat() },
-        onNavigateBack = onNavigateBack
+        onNavigateBack = safeNavigateBack
     )
 }
 

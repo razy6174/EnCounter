@@ -40,6 +40,7 @@ import com.encounter.app.R
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.encounter.app.ui.utils.TimeUtils
 import androidx.compose.material.icons.filled.Info
 
 /**
@@ -349,7 +350,7 @@ fun RadarScreenContent(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     ActionButton(
-                        text = if (uiState.isScanning) "すれ違い通信停止" else "すれ違い通信開始",
+                        text = if (uiState.isScanning) "すれちがい通信停止" else "すれちがい通信開始",
                         icon = if (uiState.isScanning) Icons.Default.Clear else Icons.Default.Search,
                         isActive = uiState.isScanning,
                         onClick = onToggleEncounter
@@ -373,6 +374,7 @@ fun RadarScreenContent(
                 DetectedUserList(
                     detectedDevices = uiState.detectedDevices.toList(),
                     detectedUsers = uiState.detectedUsers,
+                    detectedTimestamps = uiState.detectedTimestamps,
                     onUserClick = onUserClick
                 )
             }
@@ -413,7 +415,7 @@ fun TopBarActionButton(
 fun StatusChip(isBluetoothEnabled: Boolean, isEncounterActive: Boolean) {
     val (text, color) = when {
         !isBluetoothEnabled -> "Bluetooth OFF" to Color.Red
-        isEncounterActive -> "すれ違い通信中" to Color(0xFF4CAF50) // Green
+        isEncounterActive -> "すれちがい通信中" to Color(0xFF4CAF50) // Green
         else -> "待機中" to Color.Gray
     }
 
@@ -498,6 +500,7 @@ fun DeviceList(devices: List<Any>) {
 fun DetectedUserList(
     detectedDevices: List<String>,
     detectedUsers: Map<String, User>,
+    detectedTimestamps: Map<String, Long> = emptyMap(),
     onUserClick: (uidPrefix: String) -> Unit
 ) {
     LazyColumn(
@@ -506,6 +509,7 @@ fun DetectedUserList(
     ) {
         items(detectedDevices, key = { it }) { uidPrefix ->
             val user = detectedUsers[uidPrefix]
+            val detectedAt = detectedTimestamps[uidPrefix] ?: 0L
             Card(
                 onClick = { onUserClick(uidPrefix) },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -528,11 +532,25 @@ fun DetectedUserList(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = user?.displayName ?: "読み込み中...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = user?.displayName ?: "読み込み中...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            // 時間表示を追加
+                            if (detectedAt > 0) {
+                                Text(
+                                    text = TimeUtils.formatRelativeTime(detectedAt),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                         if (user != null && user.tags.isNotEmpty()) {
                             Text(
                                 text = user.tags.take(3).joinToString(" ") { "#$it" },

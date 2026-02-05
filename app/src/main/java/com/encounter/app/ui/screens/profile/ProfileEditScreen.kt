@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.encounter.app.domain.model.UserStatus
 import com.encounter.app.ui.theme.EnCounterTheme
+import com.encounter.app.ui.utils.rememberSafeNavigateBack
 
 /**
  * プロフィール編集画面（外側）
@@ -66,6 +67,9 @@ fun ProfileEditScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
+    // 二重タップ防止付きの安全な戻るナビゲーション
+    val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
+    
     // ========================================
     // 久米実装: 変更禁止（初期読み込み）
     // ========================================
@@ -79,7 +83,7 @@ fun ProfileEditScreen(
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
-                is ProfileUiEvent.NavigateBack -> onNavigateBack()
+                is ProfileUiEvent.NavigateBack -> safeNavigateBack()
                 is ProfileUiEvent.ShowError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
@@ -92,7 +96,7 @@ fun ProfileEditScreen(
     ProfileEditScreenContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
-        onNavigateBack = onNavigateBack,
+        onNavigateBack = safeNavigateBack,
         onDisplayNameChanged = { viewModel.onDisplayNameChanged(it) },
         onCommentChanged = { viewModel.onCommentChanged(it) },
         onStatusChanged = { viewModel.onStatusChanged(it) },

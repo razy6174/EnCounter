@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.encounter.app.ui.theme.EnCounterTheme
+import com.encounter.app.ui.utils.rememberSafeNavigateBack
 
 /**
  * ヘルプ画面
@@ -30,12 +31,15 @@ import com.encounter.app.ui.theme.EnCounterTheme
 fun HelpScreen(
     onNavigateBack: () -> Unit
 ) {
+    // 二重タップ防止付きの安全な戻るナビゲーション
+    val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
+    
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("ヘルプ") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = safeNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る")
                     }
                 }

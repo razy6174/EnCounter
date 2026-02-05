@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.encounter.app.domain.model.Message
 import com.encounter.app.ui.theme.EnCounterTheme
+import com.encounter.app.ui.utils.rememberSafeNavigateBack
 
 /**
  * チャット画面（外側）
@@ -66,6 +67,9 @@ fun ChatScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
+    // 二重タップ防止付きの安全な戻るナビゲーション
+    val safeNavigateBack = rememberSafeNavigateBack(onNavigateBack)
+    
     // ========================================
     // 久米実装: 変更禁止（UIイベント監視）
     // ========================================
@@ -88,7 +92,7 @@ fun ChatScreen(
         snackbarHostState = snackbarHostState,
         onInputTextChanged = { viewModel.onInputTextChanged(it) },
         onSendMessage = { viewModel.sendMessage() },
-        onNavigateBack = onNavigateBack
+        onNavigateBack = safeNavigateBack
     )
 }
 

@@ -172,10 +172,12 @@ class MatchListViewModel @Inject constructor(
     
     /**
      * 履歴を全削除
+     * Firebaseキャッシュもクリアし、次回検知時に最新情報を取得
      */
     fun clearAllHistory() {
-        Log.d(TAG, "Clearing all history")
+        Log.d(TAG, "Clearing all history and user cache")
         encounterHistoryRepository.clearHistory()
+        userRepository.clearUserCache()  // Firebase再照会を有効化
         _uiState.update { it.copy(showDeleteConfirmDialog = false) }
     }
     
