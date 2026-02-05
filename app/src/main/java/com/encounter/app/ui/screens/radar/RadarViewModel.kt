@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.encounter.app.ble.BleManager
 import com.encounter.app.ble.PermissionState
 import com.encounter.app.data.repository.UserRepository
+import com.encounter.app.debug.DebugHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,6 +29,7 @@ data class RadarUiState(
     val permissionState: PermissionState = PermissionState.UNKNOWN,
     val detectedDeviceCount: Int = 0,
     val detectedDevices: Set<String> = emptySet(),
+    val isForceDetectionMode: Boolean = false,
     val errorMessage: String? = null
 ) {
     /**
@@ -55,7 +58,8 @@ sealed class RadarUiEvent {
 @HiltViewModel
 class RadarViewModel @Inject constructor(
     private val bleManager: BleManager,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val debugHelper: DebugHelper
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RadarUiState())
@@ -70,6 +74,7 @@ class RadarViewModel @Inject constructor(
     init {
         observeBleState()
         observeCurrentUser()
+        observeDebugState()
         checkInitialState()
     }
     
@@ -81,6 +86,31 @@ class RadarViewModel @Inject constructor(
             userRepository.observeCurrentUser().collect { user ->
                 currentUserUidPrefix = user?.uidPrefix
                 Log.d("RadarViewModel", "Current user uidPrefix updated: $currentUserUidPrefix")
+            }
+        }
+    }
+    
+    /**
+     * デバッグ状態を監視
+     * 強制検知モードが有効な場合は、BLEの検知デバイスをオーバーライド
+     */
+    private fun observeDebugState() {
+        viewModelScope.launch {
+            // 強制検知モードの状態とデバイスリストを組み合わせて監視
+            combine(
+                debugHelper.isForceDetectionMode,
+                debugHelper.forceDetectedDevices,
+                bleManager.detectedDevices
+            ) { isForceMode, forceDevices, bleDevices ->
+                Triple(isForceMode, forceDevices, bleDevices)
+            }.collect { (isForceMode, forceDevices, bleDevices) ->
+                _uiState.update { 
+                    it.copy(
+                        isForceDetectionMode = isForceMode,
+                        detectedDevices = if (isForceMode) forceDevices else bleDevices,
+                        detectedDeviceCount = if (isForceMode) forceDevices.size else bleDevices.size
+                    ) 
+                }
             }
         }
     }
@@ -100,18 +130,6 @@ class RadarViewModel @Inject constructor(
         viewModelScope.launch {
             bleManager.isAdvertising.collect { isAdvertising ->
                 _uiState.update { it.copy(isAdvertising = isAdvertising) }
-            }
-        }
-        
-        // 検知デバイスを監視
-        viewModelScope.launch {
-            bleManager.detectedDevices.collect { devices ->
-                _uiState.update { 
-                    it.copy(
-                        detectedDevices = devices,
-                        detectedDeviceCount = devices.size
-                    ) 
-                }
             }
         }
         
