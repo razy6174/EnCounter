@@ -95,8 +95,8 @@ fun AppNavGraph(
         // レーダー画面（ホーム）
         composable(Screen.Radar.route) {
             RadarScreen(
-                onNavigateToMatchList = {
-                    navController.navigate(Screen.MatchList.route)
+                onNavigateToMatchList = { detectedUids ->
+                    navController.navigate(Screen.MatchList.createRoute(detectedUids))
                 },
                 onNavigateToProfile = {
                     navController.navigate(Screen.ProfileEdit.route)
@@ -108,7 +108,15 @@ fun AppNavGraph(
         }
         
         // マッチリスト画面
-        composable(Screen.MatchList.route) {
+        composable(
+            route = Screen.MatchList.route,
+            arguments = listOf(
+                navArgument("detectedUids") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) {
             MatchListScreen(
                 onNavigateToUserDetail = { userId ->
                     navController.navigate(Screen.UserDetail.createRoute(userId))

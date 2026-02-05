@@ -1,5 +1,6 @@
 package com.encounter.app.ui.screens.radar
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.encounter.app.ble.BleManager
@@ -63,9 +64,25 @@ class RadarViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<RadarUiEvent>()
     val uiEvent: SharedFlow<RadarUiEvent> = _uiEvent.asSharedFlow()
     
+    // 現在のユーザーのuidPrefixをキャッシュ
+    private var currentUserUidPrefix: String? = null
+    
     init {
         observeBleState()
+        observeCurrentUser()
         checkInitialState()
+    }
+    
+    /**
+     * 現在のユーザー情報を監視してuidPrefixを取得
+     */
+    private fun observeCurrentUser() {
+        viewModelScope.launch {
+            userRepository.observeCurrentUser().collect { user ->
+                currentUserUidPrefix = user?.uidPrefix
+                Log.d("RadarViewModel", "Current user uidPrefix updated: $currentUserUidPrefix")
+            }
+        }
     }
     
     /**
@@ -151,10 +168,10 @@ class RadarViewModel @Inject constructor(
             return
         }
         
-        val currentUserId = userRepository.getCurrentUserId()
-        if (currentUserId == null) {
+        val uidPrefix = currentUserUidPrefix
+        if (uidPrefix.isNullOrEmpty()) {
             viewModelScope.launch {
-                _uiEvent.emit(RadarUiEvent.ShowError("ログインが必要です"))
+                _uiEvent.emit(RadarUiEvent.ShowError("ユーザー情報が取得できません。プロフィールを設定してください。"))
             }
             return
         }
@@ -162,7 +179,7 @@ class RadarViewModel @Inject constructor(
         if (_uiState.value.isAdvertising) {
             bleManager.stopAdvertising()
         } else {
-            bleManager.startAdvertising(currentUserId)
+            bleManager.startAdvertising(uidPrefix)
         }
     }
     
@@ -196,7 +213,6 @@ class RadarViewModel @Inject constructor(
     /**
      * すれ違い通信を開始/停止をトグル
      * スキャンとアドバタイズを同時に制御
-     * Firebase不要でBLE通信のみをテスト可能
      */
     fun toggleEncounter() {
         if (!bleManager.checkPermissions()) {
@@ -209,8 +225,14 @@ class RadarViewModel @Inject constructor(
         if (_uiState.value.isEncounterActive) {
             bleManager.stopEncounter()
         } else {
-            // Firebase不要: デバッグ用のUIDを自動生成
-            bleManager.startEncounter()
+            val uidPrefix = currentUserUidPrefix
+            if (uidPrefix.isNullOrEmpty()) {
+                viewModelScope.launch {
+                    _uiEvent.emit(RadarUiEvent.ShowError("ユーザー情報が取得できません。プロフィールを設定してください。"))
+                }
+                return
+            }
+            bleManager.startEncounter(uidPrefix)
         }
     }
 }
