@@ -33,6 +33,17 @@ class UserRepository @Inject constructor(
     }
     
     /**
+     * uidPrefixベースのユーザーキャッシュ
+     * BLE検知では同じuidPrefixが何度も検知されるため、キャッシュで照会数を削減
+     * 
+     * Key: uidPrefix (16文字)
+     * Value: User? (null = ユーザー未登録)
+     * 
+     * 担当: 久米（Backend）
+     */
+    private val userCache = mutableMapOf<String, User?>()
+    
+    /**
      * 匿名認証でログイン
      */
     suspend fun signInAnonymously(): Result<String> {
@@ -138,6 +149,57 @@ class UserRepository @Inject constructor(
         
         Log.d(TAG, "Total users fetched: ${allUsers.size}")
         emit(allUsers)
+    }
+    
+    /**
+     * uidPrefixから単一ユーザーを取得（キャッシュ付き）
+     * BLE検知時のリアルタイム照会に使用
+     * 
+     * @param uidPrefix BLEで検知した16文字のuidPrefix
+     * @return User?（見つからない場合はnull）
+     * 
+     * キャッシュヒット時: 即座に返却（Firebase照会なし）
+     * キャッシュミス時: Firestore照会 → キャッシュに保存 → 返却
+     * 
+     * 担当: 久米（Backend）
+     */
+    suspend fun getUserByUidPrefix(uidPrefix: String): User? {
+        // キャッシュ確認
+        if (userCache.containsKey(uidPrefix)) {
+            Log.d(TAG, "Cache hit for uidPrefix: $uidPrefix")
+            return userCache[uidPrefix]
+        }
+        
+        // Firestore照会
+        Log.d(TAG, "Cache miss for uidPrefix: $uidPrefix, querying Firestore")
+        
+        return try {
+            val snapshot = firestore.collection("users")
+                .whereEqualTo("uidPrefix", uidPrefix)
+                .limit(1)  // 1件のみ取得（パフォーマンス最適化）
+                .get()
+                .await()
+            
+            val user = snapshot.documents.firstOrNull()?.toObject(User::class.java)
+            
+            // キャッシュに保存（nullもキャッシュして再照会を防ぐ）
+            userCache[uidPrefix] = user
+            
+            Log.d(TAG, "Firestore result for $uidPrefix: ${user?.displayName ?: "not found"}")
+            user
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get user by uidPrefix: $uidPrefix", e)
+            null
+        }
+    }
+    
+    /**
+     * ユーザーキャッシュをクリア
+     * テストやアプリリセット時に使用
+     */
+    fun clearUserCache() {
+        userCache.clear()
+        Log.d(TAG, "User cache cleared")
     }
     
     /**

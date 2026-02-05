@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.encounter.app.data.repository.UserRepository
 import com.encounter.app.domain.model.User
+import com.encounter.app.domain.model.UserStatus
+import com.encounter.app.domain.model.UserStatus.Companion.isActive
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +27,9 @@ private const val TAG = "MatchListViewModel"
 data class MatchListUiState(
     val isLoading: Boolean = false,
     val users: List<User> = emptyList(),
+    val filteredUsers: List<User> = emptyList(),
     val detectedUids: Set<String> = emptySet(),
+    val isFilterEnabled: Boolean = false,  // フィルタリングは既にRadarViewModelで完了
     val error: String? = null
 )
 
@@ -81,13 +85,18 @@ class MatchListViewModel @Inject constructor(
     
     /**
      * 検知UIDからユーザー情報を取得
+     * 
+     * フィルタリング早期化により、RadarViewModelで既にフィルター済みのため、
+     * ここではフィルタリングを行わず、そのまま表示する
+     * 
+     * 担当: 久米（Backend）
      */
     private fun loadMatchedUsers(uids: List<String>) {
         Log.d(TAG, "loadMatchedUsers called with ${uids.size} UIDs: $uids")
         
         if (uids.isEmpty()) {
             Log.w(TAG, "UIDs list is empty, showing empty list")
-            _uiState.update { it.copy(users = emptyList(), isLoading = false) }
+            _uiState.update { it.copy(users = emptyList(), filteredUsers = emptyList(), isLoading = false) }
             return
         }
         
@@ -96,13 +105,17 @@ class MatchListViewModel @Inject constructor(
             
             try {
                 userRepository.getUsersByIds(uids).collect { users ->
-                    Log.d(TAG, "Fetched ${users.size} users from repository")
+                    Log.d(TAG, "Fetched ${users.size} users from repository (pre-filtered by RadarViewModel)")
+                    
                     users.forEach { user ->
-                        Log.d(TAG, "  - ${user.uid}: ${user.displayName}")
+                        Log.d(TAG, "  - ${user.uid}: ${user.displayName} (${user.status.displayName})")
                     }
+                    
+                    // フィルタリングは不要（既にRadarViewModelでフィルター済み）
                     _uiState.update { 
                         it.copy(
                             users = users,
+                            filteredUsers = users,  // 同じリスト
                             isLoading = false,
                             error = null
                         ) 
@@ -119,6 +132,36 @@ class MatchListViewModel @Inject constructor(
                 _uiEvent.emit(MatchListUiEvent.ShowError("ユーザー情報の取得に失敗しました"))
             }
         }
+    }
+    
+    /**
+     * マッチングフィルターを適用
+     * OFFLINE（オフライン）以外のユーザーを返す
+     * 
+     * 担当: 久米（Backend）
+     */
+    private fun applyMatchingFilter(users: List<User>): List<User> {
+        return if (_uiState.value.isFilterEnabled) {
+            users.filter { it.status.isActive() }
+        } else {
+            users
+        }
+    }
+    
+    /**
+     * フィルタリングの有効/無効を切り替え
+     */
+    fun toggleFilter() {
+        val newFilterState = !_uiState.value.isFilterEnabled
+        _uiState.update { 
+            val filtered = if (newFilterState) {
+                it.users.filter { user -> user.status.isActive() }
+            } else {
+                it.users
+            }
+            it.copy(isFilterEnabled = newFilterState, filteredUsers = filtered)
+        }
+        Log.d(TAG, "Filter toggled: $newFilterState")
     }
     
     /**

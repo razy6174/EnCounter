@@ -129,9 +129,23 @@ class BleManager @Inject constructor(
     private var txPowerLevel: TxPowerLevel = DEFAULT_TX_POWER
     private var currentUidPrefix: String? = null
     
+    // ステルスモード（発信停止、受信のみ）
+    private val _isStealthMode = MutableStateFlow(false)
+    val isStealthMode: StateFlow<Boolean> = _isStealthMode.asStateFlow()
+    
     // 新規検知イベント（通知用）
     private val _newDetectionEvent = MutableSharedFlow<NewDetectionEvent>(extraBufferCapacity = 10)
     val newDetectionEvent: SharedFlow<NewDetectionEvent> = _newDetectionEvent.asSharedFlow()
+    
+    /**
+     * 未フィルタリングの検知イベント
+     * RadarViewModelで処理され、フィルタリング後にdetectedDevicesに追加される
+     * 
+     * extraBufferCapacity: 20
+     * → BLE検知は短時間に複数発生する可能性があるため、バッファを大きめに設定
+     */
+    private val _rawDetectionEvent = MutableSharedFlow<NewDetectionEvent>(extraBufferCapacity = 20)
+    val rawDetectionEvent: SharedFlow<NewDetectionEvent> = _rawDetectionEvent.asSharedFlow()
     
     /**
      * RSSI閾値（受信感度）を設定
@@ -182,6 +196,28 @@ class BleManager @Inject constructor(
     fun getTxPowerLevel(): TxPowerLevel = txPowerLevel
     
     /**
+     * ステルスモードを設定
+     * ONにすると発信（アドバタイズ）を停止し、受信（スキャン）のみになる
+     * 
+     * @param enabled true: ステルスON（発信停止）、false: ステルスOFF（発信許可）
+     */
+    fun setStealthMode(enabled: Boolean) {
+        _isStealthMode.value = enabled
+        Log.d(TAG, "Stealth mode: ${if (enabled) "ON (発信停止)" else "OFF (発信許可)"}")
+        
+        if (enabled && _isAdvertising.value) {
+            // ステルスON時にアドバタイズ中なら停止
+            stopAdvertising()
+            Log.d(TAG, "Advertising stopped due to stealth mode")
+        }
+    }
+    
+    /**
+     * ステルスモードが有効かどうか
+     */
+    fun isStealthModeEnabled(): Boolean = _isStealthMode.value
+    
+    /**
      * Bluetoothが有効かどうか
      */
     fun isBluetoothEnabled(): Boolean {
@@ -206,6 +242,12 @@ class BleManager @Inject constructor(
      * @param uidPrefix ユーザーのUID（短縮版16文字）
      */
     fun startAdvertising(uidPrefix: String) {
+        // ステルスモード中はアドバタイズを開始しない
+        if (_isStealthMode.value) {
+            Log.d(TAG, "Advertising skipped: stealth mode is enabled")
+            return
+        }
+        
         val advertiser = this.advertiser ?: run {
             Log.e(TAG, "Advertiser not available")
             return
@@ -438,12 +480,21 @@ class BleManager @Inject constructor(
         }
     }
     
+    /**
+     * BLEスキャン結果を処理
+     * 
+     * 変更点（フィルタリング早期化）:
+     * - リストに即座に追加せず、rawDetectionEventのみを発火
+     * - フィルタリングはRadarViewModelで行い、通過後にaddDetectedDevice()で追加
+     * 
+     * 担当: 久米（Backend）
+     */
     private fun processScanResult(result: ScanResult) {
         val scanRecord = result.scanRecord
         val deviceAddress = result.device?.address ?: "unknown"
         val rssi = result.rssi
         
-        // 動的なRSSI閾値によるフィルタリング
+        // 動的なRSSI閾値によるフィルタリング（物理的な距離判定）
         if (rssi < rssiThreshold) {
             return
         }
@@ -457,21 +508,40 @@ class BleManager @Inject constructor(
         if (serviceData != null) {
             val uid = String(serviceData)
             val isNewDetection = uid !in _detectedDevices.value
-            Log.d(TAG, "Detected: $uid (RSSI: $rssi dBm, new: $isNewDetection)")
+            Log.d(TAG, "BLE Detected: $uid (RSSI: $rssi dBm, new: $isNewDetection)")
             
             if (isNewDetection) {
-                _detectedDevices.value = _detectedDevices.value + uid
-                // 新規検知イベントを発火（通知用）
-                _newDetectionEvent.tryEmit(NewDetectionEvent(uid, rssi))
+                // 変更: リストに追加せず、イベントのみ発火
+                // フィルタリングはRadarViewModelで行う
+                _rawDetectionEvent.tryEmit(NewDetectionEvent(uid, rssi))
             }
         } else if (hasTargetServiceUuid) {
             val isNewDetection = deviceAddress !in _detectedDevices.value
-            Log.d(TAG, "Detected: $deviceAddress (RSSI: $rssi dBm, new: $isNewDetection)")
+            Log.d(TAG, "BLE Detected: $deviceAddress (RSSI: $rssi dBm, new: $isNewDetection)")
             
             if (isNewDetection) {
-                _detectedDevices.value = _detectedDevices.value + deviceAddress
-                _newDetectionEvent.tryEmit(NewDetectionEvent(deviceAddress, rssi))
+                // 変更: リストに追加せず、イベントのみ発火
+                _rawDetectionEvent.tryEmit(NewDetectionEvent(deviceAddress, rssi))
             }
+        }
+    }
+    
+    /**
+     * 検知デバイスリストに追加（外部から呼び出し可能）
+     * フィルタリング済みのuidPrefixを追加する際に使用
+     * 
+     * @param uidPrefix 追加するuidPrefix
+     * 
+     * 担当: 久米（Backend）
+     */
+    fun addDetectedDevice(uidPrefix: String) {
+        if (uidPrefix !in _detectedDevices.value) {
+            _detectedDevices.value = _detectedDevices.value + uidPrefix
+            
+            // 通知用イベントを発火（バイブ・音声）
+            _newDetectionEvent.tryEmit(NewDetectionEvent(uidPrefix, 0))
+            
+            Log.d(TAG, "Added detected device: $uidPrefix (total: ${_detectedDevices.value.size})")
         }
     }
 }

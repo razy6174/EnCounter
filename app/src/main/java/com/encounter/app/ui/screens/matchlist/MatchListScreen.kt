@@ -135,7 +135,7 @@ fun MatchListScreenContent(
                     CircularProgressIndicator()
                 }
             }
-            uiState.users.isEmpty() -> {
+            uiState.filteredUsers.isEmpty() -> {
                 // TODO: 昆野 - 空状態のデザインを改善（イラストなど）
                 Box(
                     modifier = Modifier
@@ -166,7 +166,7 @@ fun MatchListScreenContent(
                         .padding(paddingValues)
                         .padding(horizontal = 16.dp)
                 ) {
-                    items(uiState.users, key = { it.uid }) { user ->
+                    items(uiState.filteredUsers, key = { it.uid }) { user ->
                         // ========================================
                         // 久米実装: onClickは変更禁止
                         // 昆野担当: カードのデザインは変更可能
