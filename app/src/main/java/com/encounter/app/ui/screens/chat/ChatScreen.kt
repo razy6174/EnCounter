@@ -40,23 +40,35 @@ import com.encounter.app.domain.model.Message
 import com.encounter.app.ui.theme.EnCounterTheme
 
 /**
- * チャット画面
+ * チャット画面（外側）
+ * ViewModelを使用してStateを取得し、Content関数に渡す
  * 
  * 担当: 昆野（Frontend）- UI実装
- * 担当: 久米（Backend）- ViewModel統合
+ * ViewModel連携: 久米（Backend）- 実装済み
+ * 
+ * 注意: 以下のセクションは久米が実装済みのため変更禁止
+ * - ViewModelの取得（hiltViewModel）
+ * - uiState/uiEventの監視
+ * - ViewModel関数の呼び出し
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     roomId: String,
     onNavigateBack: () -> Unit,
+    // ========================================
+    // 久米実装: 変更禁止
+    // ========================================
     viewModel: ChatViewModel = hiltViewModel()
 ) {
+    // ========================================
+    // 久米実装: 変更禁止（状態監視）
+    // ========================================
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val listState = rememberLazyListState()
     
-    // UIイベントを監視
+    // ========================================
+    // 久米実装: 変更禁止（UIイベント監視）
+    // ========================================
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -64,13 +76,38 @@ fun ChatScreen(
                     snackbarHostState.showSnackbar(event.message)
                 }
                 is ChatUiEvent.ScrollToBottom -> {
-                    if (uiState.messages.isNotEmpty()) {
-                        listState.animateScrollToItem(uiState.messages.size - 1)
-                    }
+                    // ScrollToBottomイベントはContent内で処理
                 }
             }
         }
     }
+    
+    // 内側のContent関数を呼び出す
+    ChatScreenContent(
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onInputTextChanged = { viewModel.onInputTextChanged(it) },
+        onSendMessage = { viewModel.sendMessage() },
+        onNavigateBack = onNavigateBack
+    )
+}
+
+/**
+ * チャット画面のコンテンツ（内側）
+ * 状態を引数で受け取るため、Previewが可能
+ * 
+ * 昆野担当: 以下は自由に編集可能
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChatScreenContent(
+    uiState: ChatUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onInputTextChanged: (String) -> Unit,
+    onSendMessage: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    val listState = rememberLazyListState()
     
     // メッセージが更新されたら最下部にスクロール
     LaunchedEffect(uiState.messages.size) {
@@ -102,14 +139,14 @@ fun ChatScreen(
             ) {
                 OutlinedTextField(
                     value = uiState.inputText,
-                    onValueChange = { viewModel.onInputTextChanged(it) },
+                    onValueChange = onInputTextChanged,
                     placeholder = { Text("メッセージを入力") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !uiState.isSending
                 )
                 IconButton(
-                    onClick = { viewModel.sendMessage() },
+                    onClick = onSendMessage,
                     enabled = uiState.inputText.isNotBlank() && !uiState.isSending
                 ) {
                     if (uiState.isSending) {
@@ -180,10 +217,75 @@ fun MessageBubble(
 
 @Preview(showBackground = true)
 @Composable
-fun ChatScreenPreview() {
+private fun ChatScreenPreview() {
     EnCounterTheme {
-        ChatScreen(
-            roomId = "dummy",
+        ChatScreenContent(
+            uiState = ChatUiState(
+                roomId = "room123",
+                myUserId = "user1",
+                partnerUser = com.encounter.app.domain.model.User(
+                    uid = "user2",
+                    displayName = "山田太郎"
+                ),
+                messages = listOf(
+                    Message(
+                        messageId = "1",
+                        senderId = "user2",
+                        text = "こんにちは！",
+                        createdAt = System.currentTimeMillis()
+                    ),
+                    Message(
+                        messageId = "2",
+                        senderId = "user1",
+                        text = "こんにちは！よろしくお願いします",
+                        createdAt = System.currentTimeMillis()
+                    ),
+                    Message(
+                        messageId = "3",
+                        senderId = "user2",
+                        text = "Kotlinお使いなんですね！",
+                        createdAt = System.currentTimeMillis()
+                    )
+                )
+            ),
+            onInputTextChanged = {},
+            onSendMessage = {},
+            onNavigateBack = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatScreenLoadingPreview() {
+    EnCounterTheme {
+        ChatScreenContent(
+            uiState = ChatUiState(
+                isLoading = true
+            ),
+            onInputTextChanged = {},
+            onSendMessage = {},
+            onNavigateBack = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatScreenEmptyPreview() {
+    EnCounterTheme {
+        ChatScreenContent(
+            uiState = ChatUiState(
+                roomId = "room123",
+                myUserId = "user1",
+                partnerUser = com.encounter.app.domain.model.User(
+                    uid = "user2",
+                    displayName = "佐藤花子"
+                ),
+                messages = emptyList()
+            ),
+            onInputTextChanged = {},
+            onSendMessage = {},
             onNavigateBack = {}
         )
     }
