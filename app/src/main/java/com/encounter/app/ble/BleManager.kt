@@ -361,7 +361,7 @@ class BleManager @Inject constructor(
     }
     
     /**
-     * すれ違い通信を開始（スキャン + アドバタイズ同時）
+     * すれちがい通信を開始（スキャン + アドバタイズ同時）
      * Firebase不要でBLE通信のみをテストする場合に使用
      * 
      * @param uidPrefix ユーザーのuidPrefix（16文字、省略時は自動生成）
@@ -375,7 +375,7 @@ class BleManager @Inject constructor(
     }
     
     /**
-     * すれ違い通信を停止（スキャン + アドバタイズ同時）
+     * すれちがい通信を停止（スキャン + アドバタイズ同時）
      */
     fun stopEncounter() {
         stopAdvertising()
@@ -384,7 +384,7 @@ class BleManager @Inject constructor(
     }
     
     /**
-     * すれ違い通信がアクティブかどうか
+     * すれちがい通信がアクティブかどうか
      */
     fun isEncounterActive(): Boolean {
         return _isScanning.value || _isAdvertising.value

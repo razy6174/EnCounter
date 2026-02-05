@@ -42,7 +42,7 @@ sealed class MatchListUiEvent {
 
 /**
  * すれちがい図鑑画面のViewModel
- * 永続化されたすれ違い履歴からユーザー情報を取得・表示
+ * 永続化されたすれちがい履歴からユーザー情報を取得・表示
  * 
  * 担当: 久米（Backend）
  */

@@ -1,11 +1,11 @@
 package com.encounter.app.domain.model
 
 /**
- * すれ違い履歴レコード
- * 永続化されるすれ違いの記録
+ * すれちがい履歴レコード
+ * 永続化されるすれちがいの記録
  * 
  * @param uidPrefix BLEで検知したUID（16文字）
- * @param timestamp すれ違った日時（Unix timestamp）
+ * @param timestamp すれちがった日時（Unix timestamp）
  * @param displayName ユーザー名（キャッシュ用、オプショナル）
  * 
  * 担当: 久米（Backend）

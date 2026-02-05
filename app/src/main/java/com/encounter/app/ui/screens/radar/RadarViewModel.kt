@@ -42,7 +42,7 @@ data class RadarUiState(
     val errorMessage: String? = null
 ) {
     /**
-     * すれ違い通信がアクティブかどうか
+     * すれちがい通信がアクティブかどうか
      * スキャンまたはアドバタイズのどちらかが動作中ならtrue
      */
     val isEncounterActive: Boolean
@@ -412,7 +412,7 @@ class RadarViewModel @Inject constructor(
     }
     
     /**
-     * すれ違い通信を開始/停止をトグル
+     * すれちがい通信を開始/停止をトグル
      * スキャンとアドバタイズを同時に制御
      * 
      * - ステルスモード中はスキャンのみ開始（発信停止）

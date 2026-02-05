@@ -16,7 +16,7 @@ import javax.inject.Singleton
 private const val TAG = "EncounterHistoryRepo"
 
 /**
- * すれ違い履歴を管理するリポジトリ
+ * すれちがい履歴を管理するリポジトリ
  * SharedPreferencesを使用して永続化
  * 
  * 設計意図:
@@ -49,7 +49,7 @@ class EncounterHistoryRepository @Inject constructor(
     }
     
     /**
-     * 履歴にすれ違い記録を追加
+     * 履歴にすれちがい記録を追加
      * 重複は上書き（同じuidPrefixがあれば最新のタイムスタンプで更新）
      * 
      * @param uidPrefix BLEで検知したUID（16文字）

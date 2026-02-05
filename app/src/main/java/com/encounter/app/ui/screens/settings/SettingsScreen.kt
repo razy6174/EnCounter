@@ -122,7 +122,7 @@ fun SettingsScreenContent(
             }
             
             // BLE設定セクション
-            SettingsSectionCard(title = "すれ違い検知設定") {
+            SettingsSectionCard(title = "すれちがい検知設定") {
                 // 受信感度
                 SettingsSubsection(title = "受信感度（検知距離）") {
                     ScanSensitivitySelector(
