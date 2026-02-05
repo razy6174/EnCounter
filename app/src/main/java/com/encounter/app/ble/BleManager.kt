@@ -20,8 +20,11 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 import javax.inject.Inject
@@ -38,6 +41,37 @@ enum class PermissionState {
 }
 
 /**
+ * 受信感度（RSSI閾値）プリセット
+ * 
+ * 担当: 久米（Backend）
+ */
+enum class ScanSensitivity(val rssiThreshold: Int, val displayName: String, val description: String) {
+    HIGH(-85, "高感度", "約10m以上 - 広いエリアをカバー"),
+    MEDIUM(-70, "標準", "約5m - バランスの良い設定"),
+    LOW(-50, "低感度", "約1-2m - すぐ近くの人だけ")
+}
+
+/**
+ * 送信電力プリセット
+ * 
+ * 担当: 久米（Backend）
+ */
+enum class TxPowerLevel(val advertiseLevel: Int, val displayName: String, val description: String) {
+    HIGH(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH, "強", "約10m以上 - 広範囲に届く"),
+    MEDIUM(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM, "中", "約5-8m - 標準"),
+    LOW(AdvertiseSettings.ADVERTISE_TX_POWER_LOW, "弱", "約1-3m - 近距離のみ"),
+    ULTRA_LOW(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW, "極弱", "約0.5-1m - 省電力")
+}
+
+/**
+ * 新規検知イベント（通知用）
+ */
+data class NewDetectionEvent(
+    val uidPrefix: String,
+    val rssi: Int
+)
+
+/**
  * BLE通信を管理するクラス
  * Advertise（発信）とScan（受信）を担当
  * 
@@ -52,17 +86,10 @@ class BleManager @Inject constructor(
         // アプリ固有のService UUID
         val SERVICE_UUID: UUID = UUID.fromString("0000EC00-0000-1000-8000-00805F9B34FB")
         
-        /**
-         * RSSI閾値（この値以上の信号強度でのみ検知）
-         * 目安:
-         *   -50 dBm: 約1m以内
-         *   -60 dBm: 約2-3m
-         *   -70 dBm: 約5m
-         *   -80 dBm: 約10m以上
-         * 
-         * 2~5m を目標とする場合: -70 dBm 程度
-         */
-        const val RSSI_THRESHOLD = -70
+        // デフォルト値
+        const val DEFAULT_RSSI_THRESHOLD = -70
+        val DEFAULT_TX_POWER = TxPowerLevel.MEDIUM
+        val DEFAULT_SENSITIVITY = ScanSensitivity.MEDIUM
     }
     
     private val bluetoothManager: BluetoothManager? by lazy {
@@ -97,6 +124,63 @@ class BleManager @Inject constructor(
     private val _permissionState = MutableStateFlow(PermissionState.UNKNOWN)
     val permissionState: StateFlow<PermissionState> = _permissionState.asStateFlow()
     
+    // 設定値
+    private var rssiThreshold: Int = DEFAULT_RSSI_THRESHOLD
+    private var txPowerLevel: TxPowerLevel = DEFAULT_TX_POWER
+    private var currentUidPrefix: String? = null
+    
+    // 新規検知イベント（通知用）
+    private val _newDetectionEvent = MutableSharedFlow<NewDetectionEvent>(extraBufferCapacity = 10)
+    val newDetectionEvent: SharedFlow<NewDetectionEvent> = _newDetectionEvent.asSharedFlow()
+    
+    /**
+     * RSSI閾値（受信感度）を設定
+     * 再スキャンは自動では行われないため、必要に応じてrestartScanningを呼び出す
+     */
+    fun setRssiThreshold(threshold: Int) {
+        rssiThreshold = threshold
+        Log.d(TAG, "RSSI threshold updated: $threshold dBm")
+    }
+    
+    /**
+     * 受信感度をプリセットから設定
+     */
+    fun setScanSensitivity(sensitivity: ScanSensitivity) {
+        setRssiThreshold(sensitivity.rssiThreshold)
+    }
+    
+    /**
+     * 送信電力を設定（アドバタイズ再起動が必要）
+     */
+    fun setTxPowerLevel(level: TxPowerLevel) {
+        txPowerLevel = level
+        Log.d(TAG, "TxPower level updated: ${level.displayName}")
+        
+        // アドバタイズ中なら再起動
+        if (_isAdvertising.value && currentUidPrefix != null) {
+            restartAdvertising()
+        }
+    }
+    
+    /**
+     * アドバタイズを再起動（設定変更反映用）
+     */
+    private fun restartAdvertising() {
+        val uidPrefix = currentUidPrefix ?: return
+        stopAdvertising()
+        startAdvertising(uidPrefix)
+    }
+    
+    /**
+     * 現在のRSSI閾値を取得
+     */
+    fun getRssiThreshold(): Int = rssiThreshold
+    
+    /**
+     * 現在の送信電力を取得
+     */
+    fun getTxPowerLevel(): TxPowerLevel = txPowerLevel
+    
     /**
      * Bluetoothが有効かどうか
      */
@@ -119,7 +203,7 @@ class BleManager @Inject constructor(
     
     /**
      * アドバタイズを開始
-     * @param uid ユーザーのUID（短縮版16文字）
+     * @param uidPrefix ユーザーのUID（短縮版16文字）
      */
     fun startAdvertising(uidPrefix: String) {
         val advertiser = this.advertiser ?: run {
@@ -127,15 +211,12 @@ class BleManager @Inject constructor(
             return
         }
         
-        // 送信電力の設定
-        // ADVERTISE_TX_POWER_ULTRA_LOW: 最小（約1m）
-        // ADVERTISE_TX_POWER_LOW: 低（約3m）
-        // ADVERTISE_TX_POWER_MEDIUM: 中（約7m）
-        // ADVERTISE_TX_POWER_HIGH: 高（約10m以上）
-        // ※ 実際の距離は端末のハードウェアにより異なる
+        currentUidPrefix = uidPrefix
+        
+        // 設定された送信電力を使用
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
-            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)  // 中程度の送信電力
+            .setTxPowerLevel(txPowerLevel.advertiseLevel)
             .setConnectable(false)
             .build()
         
@@ -151,7 +232,7 @@ class BleManager @Inject constructor(
         
         try {
             advertiser.startAdvertising(settings, advertiseData, scanResponse, advertiseCallback)
-            Log.d(TAG, "Advertising started with uidPrefix: $uidPrefix")
+            Log.d(TAG, "Advertising started with uidPrefix: $uidPrefix, txPower: ${txPowerLevel.displayName}")
         } catch (e: SecurityException) {
             Log.e(TAG, "Permission denied for advertising", e)
         }
@@ -362,8 +443,8 @@ class BleManager @Inject constructor(
         val deviceAddress = result.device?.address ?: "unknown"
         val rssi = result.rssi
         
-        // RSSIによる距離フィルタリング（2~5mを目標）
-        if (rssi < RSSI_THRESHOLD) {
+        // 動的なRSSI閾値によるフィルタリング
+        if (rssi < rssiThreshold) {
             return
         }
         
@@ -375,11 +456,22 @@ class BleManager @Inject constructor(
         
         if (serviceData != null) {
             val uid = String(serviceData)
-            Log.d(TAG, "Detected: $uid (RSSI: $rssi dBm)")
-            _detectedDevices.value = _detectedDevices.value + uid
+            val isNewDetection = uid !in _detectedDevices.value
+            Log.d(TAG, "Detected: $uid (RSSI: $rssi dBm, new: $isNewDetection)")
+            
+            if (isNewDetection) {
+                _detectedDevices.value = _detectedDevices.value + uid
+                // 新規検知イベントを発火（通知用）
+                _newDetectionEvent.tryEmit(NewDetectionEvent(uid, rssi))
+            }
         } else if (hasTargetServiceUuid) {
-            Log.d(TAG, "Detected: $deviceAddress (RSSI: $rssi dBm)")
-            _detectedDevices.value = _detectedDevices.value + deviceAddress
+            val isNewDetection = deviceAddress !in _detectedDevices.value
+            Log.d(TAG, "Detected: $deviceAddress (RSSI: $rssi dBm, new: $isNewDetection)")
+            
+            if (isNewDetection) {
+                _detectedDevices.value = _detectedDevices.value + deviceAddress
+                _newDetectionEvent.tryEmit(NewDetectionEvent(deviceAddress, rssi))
+            }
         }
     }
 }

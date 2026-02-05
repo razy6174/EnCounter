@@ -17,6 +17,7 @@ import com.encounter.app.ui.screens.profile.ProfileSetupScreen
 import com.encounter.app.ui.screens.profile.ProfileViewModel
 import com.encounter.app.ui.screens.profile.TagSelectionScreen
 import com.encounter.app.ui.screens.radar.RadarScreen
+import com.encounter.app.ui.screens.settings.SettingsScreen
 import com.encounter.app.ui.screens.splash.SplashScreen
 import com.encounter.app.ui.screens.userdetail.UserDetailScreen
 
@@ -101,6 +102,9 @@ fun AppNavGraph(
                 onNavigateToProfile = {
                     navController.navigate(Screen.ProfileEdit.route)
                 },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                },
                 onNavigateToHelp = {
                     navController.navigate(Screen.Help.route)
                 }
@@ -161,6 +165,15 @@ fun AppNavGraph(
         // プロフィール編集画面
         composable(Screen.ProfileEdit.route) {
             ProfileEditScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // 設定画面
+        composable(Screen.Settings.route) {
+            SettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

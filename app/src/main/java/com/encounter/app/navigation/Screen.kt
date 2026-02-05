@@ -31,5 +31,6 @@ sealed class Screen(val route: String) {
     
     // その他
     data object ProfileEdit : Screen("profile_edit")
+    data object Settings : Screen("settings")
     data object Help : Screen("help")
 }

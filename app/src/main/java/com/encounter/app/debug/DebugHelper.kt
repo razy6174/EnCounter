@@ -33,13 +33,13 @@ class DebugHelper @Inject constructor(
                 displayName = "田中太郎",
                 comment = "エンジニアです。よろしくお願いします！",
                 tags = listOf("エンジニア", "音楽", "ゲーム"),
-                status = UserStatus.WANTED
+                status = UserStatus.OPEN
             ),
             DummyUser(
                 displayName = "佐藤花子",
                 comment = "デザイナーやってます",
                 tags = listOf("デザイン", "アート", "カフェ"),
-                status = UserStatus.WANTED
+                status = UserStatus.OPEN
             ),
             DummyUser(
                 displayName = "鈴木健",
@@ -51,13 +51,13 @@ class DebugHelper @Inject constructor(
                 displayName = "高橋美咲",
                 comment = "マーケティング担当",
                 tags = listOf("マーケティング", "旅行", "カフェ"),
-                status = UserStatus.WANTED
+                status = UserStatus.OPEN
             ),
             DummyUser(
                 displayName = "伊藤誠",
                 comment = "フロントエンドエンジニア",
                 tags = listOf("エンジニア", "デザイン", "音楽"),
-                status = UserStatus.WANTED
+                status = UserStatus.OPEN
             )
         )
     }

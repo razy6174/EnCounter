@@ -60,7 +60,7 @@ data class ProfileUiState(
     val displayName: String = "",
     val comment: String = "",
     val selectedTags: Set<String> = emptySet(),
-    val status: UserStatus = UserStatus.WANTED,
+    val status: UserStatus = UserStatus.OPEN,
     val isLoading: Boolean = false,
     val isSaveEnabled: Boolean = false,
     val isEditMode: Boolean = false,

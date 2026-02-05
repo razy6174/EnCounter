@@ -218,11 +218,7 @@ fun ProfileEditScreenContent(
                                 onClick = { onStatusChanged(status) }
                             )
                             Text(
-                                text = when (status) {
-                                    UserStatus.WANTED -> "話したい"
-                                    UserStatus.BUSY -> "忙しい"
-                                    UserStatus.OFFLINE -> "オフライン"
-                                },
+                                text = "${status.emoji} ${status.displayName}",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -306,7 +302,7 @@ private fun ProfileEditScreenPreview() {
                 displayName = "久米",
                 comment = "よろしくお願いします",
                 selectedTags = setOf("it", "game", "music"),
-                status = UserStatus.WANTED,
+                status = UserStatus.OPEN,
                 isEditMode = true,
                 isSaveEnabled = true
             ),
