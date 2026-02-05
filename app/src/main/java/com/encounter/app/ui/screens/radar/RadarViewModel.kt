@@ -7,6 +7,7 @@ import com.encounter.app.ble.BleManager
 import com.encounter.app.ble.PermissionState
 import com.encounter.app.data.repository.UserRepository
 import com.encounter.app.debug.DebugHelper
+import com.encounter.app.notification.EncounterNotificationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,7 +60,8 @@ sealed class RadarUiEvent {
 class RadarViewModel @Inject constructor(
     private val bleManager: BleManager,
     private val userRepository: UserRepository,
-    private val debugHelper: DebugHelper
+    private val debugHelper: DebugHelper,
+    private val notificationManager: EncounterNotificationManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RadarUiState())
@@ -75,6 +77,7 @@ class RadarViewModel @Inject constructor(
         observeBleState()
         observeCurrentUser()
         observeDebugState()
+        observeNewDetections()
         checkInitialState()
     }
     
@@ -111,6 +114,21 @@ class RadarViewModel @Inject constructor(
                         detectedDeviceCount = if (isForceMode) forceDevices.size else bleDevices.size
                     ) 
                 }
+            }
+        }
+    }
+    
+    /**
+     * 新規検知イベントを監視し、通知を実行
+     * Phase 5.1: バイブレーション
+     * Phase 5.2: 検知時の音声再生
+     */
+    private fun observeNewDetections() {
+        viewModelScope.launch {
+            bleManager.newDetectionEvent.collect { event ->
+                Log.d("RadarViewModel", "New detection: ${event.uidPrefix} (RSSI: ${event.rssi})")
+                // 検知時のバイブレーション・音声通知（設定に応じて）
+                notificationManager.notifyDetection()
             }
         }
     }

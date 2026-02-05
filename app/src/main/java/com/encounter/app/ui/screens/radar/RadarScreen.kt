@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 fun RadarScreen(
     onNavigateToMatchList: (detectedUids: String) -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     onNavigateToHelp: () -> Unit = {},
     // ========================================
     // 🔒 久米実装: 変更禁止
@@ -113,6 +114,7 @@ fun RadarScreen(
             onNavigateToMatchList(uidsString)
         },
         onNavigateToProfile = onNavigateToProfile,
+        onNavigateToSettings = onNavigateToSettings,
         onNavigateToHelp = onNavigateToHelp,
         // ========================================
         // 🔒 久米実装: toggleEncounter()を使用（スキャン+アドバタイズ同時実行）
@@ -132,6 +134,7 @@ fun RadarScreenContent(
     snackbarHostState: SnackbarHostState,
     onNavigateToMatchList: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onNavigateToHelp: () -> Unit,
     onToggleEncounter: () -> Unit,
     onClearDetectedDevices: () -> Unit
@@ -156,6 +159,15 @@ fun RadarScreenContent(
                         icon = Icons.Default.Person,
                         contentDescription = "プロフィール",
                         onClick = onNavigateToProfile
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp)) // ボタン同士の間隔
+
+                    // 設定ボタン
+                    TopBarActionButton(
+                        icon = Icons.Default.Settings,
+                        contentDescription = "設定",
+                        onClick = onNavigateToSettings
                     )
 
                     Spacer(modifier = Modifier.width(8.dp)) // ボタン同士の間隔
@@ -514,6 +526,7 @@ fun RadarScreenActivePreview() {
             snackbarHostState = remember { SnackbarHostState() },
             onNavigateToMatchList = {},
             onNavigateToProfile = {},
+            onNavigateToSettings = {},
             onNavigateToHelp = {},
             onToggleEncounter = {},
             onClearDetectedDevices = {}

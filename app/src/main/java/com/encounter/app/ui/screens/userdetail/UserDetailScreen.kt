@@ -169,11 +169,7 @@ fun UserDetailScreenContent(
                     
                     // TODO: 昆野 - ステータスバッジを表示
                     Text(
-                        text = when (user.status) {
-                            UserStatus.WANTED -> "🟢 話したい"
-                            UserStatus.BUSY -> "🟡 忙しい"
-                            UserStatus.OFFLINE -> "⚫ オフライン"
-                        },
+                        text = "${user.status.emoji} ${user.status.displayName}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     
@@ -232,7 +228,7 @@ private fun UserDetailScreenPreview() {
                     displayName = "山田太郎",
                     comment = "よろしくお願いします！",
                     tags = listOf("Android", "Kotlin", "サウナ"),
-                    status = UserStatus.WANTED
+                    status = UserStatus.OPEN
                 )
             ),
             onStartChat = {},

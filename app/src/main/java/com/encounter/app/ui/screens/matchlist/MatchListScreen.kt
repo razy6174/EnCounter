@@ -236,7 +236,7 @@ private fun MatchListScreenPreview() {
                         displayName = "山田太郎",
                         comment = "よろしくお願いします！",
                         tags = listOf("Android", "Kotlin"),
-                        status = UserStatus.WANTED
+                        status = UserStatus.OPEN
                     ),
                     User(
                         uid = "2",
