@@ -2,6 +2,7 @@ package com.encounter.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+
 // ==========================================
 // 🛡️ EnCounter RPG Palette
 // ドット絵RPGの世界観を表現するカラーパレット
@@ -56,3 +57,6 @@ val RpgMoonText = Color(0xFFE0E0E0)
 // ==========================================
 // ドット絵風の輪郭線に使う濃い色
 val RpgBorderColor = Color(0xFF2D241E)
+
+// ★追加: 成功・稼働中の色（ネオ・エメラルド）
+val RetroSuccess = Color(0xFF2ECC71)
