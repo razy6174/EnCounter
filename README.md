@@ -16,6 +16,7 @@
   ### クイックリンク
   
   [![技術仕様書](https://img.shields.io/badge/技術仕様書-バックエンド・ロジック-blue?style=for-the-badge)](./docs/backend-specification.md)
+  [![フロントエンド仕様書](https://img.shields.io/badge/フロントエンド仕様書-UI・画面設計-green?style=for-the-badge)](./docs/frontend-specification.md)
 
 </div>
 
@@ -46,7 +47,7 @@
   - [AI活用の設計思想](#ai活用の設計思想)
 - [UI・デザイン](#uiデザイン)
   - [画面構成](#画面構成)
-  - [スクリーンショット](#スクリーンショット)
+  - [スクリーンショット（ハイライト）](#スクリーンショットハイライト)
   - [デザインコンセプト](#デザインコンセプト)
 - [更新履歴](#更新履歴)
 
@@ -224,10 +225,10 @@ flowchart TB
 ### Version 1.0.0
 
 - **[バックエンド・ロジック仕様書](./docs/backend-specification.md)** - BLE通信、データ管理、マッチングロジック、通知システム
+- **[フロントエンド仕様書](./docs/frontend-specification.md)** - 画面構成、デザインシステム、Compose実装
 
 ### 計画中
 
-- **フロントエンド仕様書** - UI/UXデザイン、Compose実装（作成予定）
 - **デプロイ・運用ガイド** - Firebase設定、APKビルド手順
 
 ---
@@ -397,105 +398,51 @@ flowchart LR
 
 ## UI・デザイン
 
+EnCounterは**ドット絵RPG風のデザインシステム**を採用し、「冒険」「すれちがい」「一期一会」の世界観を表現しています。
+
+> 📖 **詳細な画面仕様・コンポーネント設計は [フロントエンド仕様書](./docs/frontend-specification.md) をご参照ください**
+
 ### 画面構成
 
-EnCounterは直感的な操作性とシンプルなデザインを重視したUIを採用しています。
+| 画面 | 説明 |
+| :-- | :-- |
+| スプラッシュ | アプリ起動・認証確認 |
+| プロフィール設定 | 初回登録：ニックネーム・興味タグ設定 |
+| **レーダー（メイン）** | すれちがい検知画面（リアルタイムBLE検知） |
+| すれちがい図鑑 | 過去のすれちがい履歴一覧 |
+| ユーザー詳細 | プロフィール閲覧・チャット開始 |
+| チャット | リアルタイムメッセージング |
+| 設定 | BLE感度・通知・ステルスモード設定 |
 
-#### 主要画面一覧
-
-| 画面             | 説明                                                   |
-| :--------------- | :----------------------------------------------------- |
-| スプラッシュ     | アプリ起動・認証確認                                   |
-| プロフィール設定 | 初回登録：ニックネーム・ステータス・興味タグ設定       |
-| レーダー         | すれちがい検知のメイン画面（リアルタイム検知表示）     |
-| すれちがい図鑑   | 過去のすれちがい履歴一覧                               |
-| ユーザー詳細     | すれ違ったユーザーのプロフィール閲覧・チャット開始     |
-| チャット         | マッチしたユーザーとのリアルタイムメッセージング       |
-| 設定             | BLE受信感度・通知設定・プロフィール編集                |
-
-### スクリーンショット
+### スクリーンショット（ハイライト）
 
 <div align="center">
 
-#### スプラッシュ画面
-<img src="assets/images/splash.jpg" alt="スプラッシュ画面" width="250">
-
-アプリ起動時の画面。Firebase認証を確認し、自動ログインを実行します。
-
----
-
-#### プロフィール設定
-<div style="display: flex; gap: 10px; justify-content: center;">
-<img src="assets/images/profile_setup.jpg" alt="プロフィール初期設定" width="250">
-<img src="assets/images/tag_selection.jpg" alt="タグ選択" width="250">
-</div>
-
-初回起動時のプロフィール設定画面。ニックネーム、ステータス（気分）、興味タグを登録します。
-
----
-
-#### レーダー画面（メイン）
-<div style="display: flex; gap: 10px; justify-content: center;">
-<img src="assets/images/radar1.jpg" alt="レーダー - すれちがい通信OFF" width="250">
-<img src="assets/images/radar2.jpg" alt="レーダー - すれちがい通信ON" width="250">
-<img src="assets/images/radar3.jpg" alt="レーダー - 検知後" width="250">
-</div>
-
-**左**: すれちがい通信OFF - BLEスキャン前  
-**中央**: すれちがい通信ON - BLEスキャン中  
-**右**: 検知後 - マッチしたユーザーを表示 
-
----
-
-#### すれちがい履歴・ユーザー詳細
-<div style="display: flex; gap: 10px; justify-content: center;">
-<img src="assets/images/match_list.jpg" alt="すれちがい図鑑" width="250">
-<img src="assets/images/user_detail.jpg" alt="ユーザー詳細" width="250">
-</div>
-
-**左**: すれちがい図鑑 - 過去のすれちがい履歴を時系列で表示  
-**右**: ユーザー詳細 - プロフィール閲覧とチャット開始
-
----
-
-#### チャット画面
-<img src="assets/images/chat.jpg" alt="チャット" width="250">
-
-マッチしたユーザーとのリアルタイムメッセージング。Firebase Firestoreでリアルタイム同期。
-
----
-
-#### 設定・プロフィール編集
-<div style="display: flex; gap: 10px; justify-content: center;">
-<img src="assets/images/settings1.jpg" alt="設定画面" width="250">
-<img src="assets/images/profile_edit1.jpg" alt="プロフィール編集" width="250">
-<img src="assets/images/profile_edit2.jpg" alt="興味タグ編集" width="250">
-</div>
-
-**左**: 設定画面 - BLE受信感度、通知設定、プロフィール編集  
-**中央**: プロフィール編集 - ニックネーム・ステータス変更  
-**右**: 興味タグ編集 - 興味タグの追加・削除
-
----
-
-#### ヘルプ画面
-<img src="assets/images/help.jpg" alt="ヘルプ" width="250">
-
-アプリの使い方とステータスの説明。
+<table>
+<tr>
+<td align="center"><b>レーダー画面</b></td>
+<td align="center"><b>すれちがい図鑑</b></td>
+<td align="center"><b>チャット画面</b></td>
+</tr>
+<tr>
+<td><img src="assets/images/radar2.jpg" alt="レーダー" width="200"></td>
+<td><img src="assets/images/match_list.jpg" alt="すれちがい図鑑" width="200"></td>
+<td><img src="assets/images/chat.jpg" alt="チャット" width="200"></td>
+</tr>
+</table>
 
 </div>
 
 ### デザインコンセプト
 
-#### カラースキーム
-- **プライマリ**: マテリアルテーマのデフォルトカラー（ダークモード対応）
-- **アクセント**: 検知時の通知にはビビッドな色で視覚的なフィードバック
+| 要素 | 特徴 |
+| :-- | :-- |
+| **テーマ** | ドット絵RPG風（アンティークゴールド + フォレストグリーン） |
+| **フォント** | カスタムドットフォント全体適用 |
+| **ダークモード** | システム設定に追従した自動切り替え |
+| **アニメーション** | ロゴのフローティング、レーダーパルス、スライドイン |
 
-#### UI/UXの特徴
-- **Material Design 3**: Jetpack Composeの最新デザインシステムを採用
-- **直感的な操作**: スワイプやタップで即座に反応するレスポンシブUI
-- **リアルタイムフィードバック**: BLE検知時の振動・音・画面更新で瞬時に通知
-- **ダークモード対応**: システム設定に追従した自動切り替え
+> 🎨 カラーパレット、タイポグラフィの詳細は [フロントエンド仕様書 - デザインシステム](./docs/frontend-specification.md#デザインシステム) を参照
 
 ---
 
@@ -505,3 +452,4 @@ EnCounterは直感的な操作性とシンプルなデザインを重視したUI
 | :--------- | :--------- | :--------------------------------------------- |
 | 2026-02-06 | 1.0.0      | 初版README作成、バックエンド仕様書追加         |
 | 2026-02-06 | 1.0.1      | UI・デザインセクション追加、スクリーンショット掲載 |
+| 2026-02-06 | 1.0.2      | フロントエンド仕様書追加、READMEのUI詳細を仕様書へ移管 |
