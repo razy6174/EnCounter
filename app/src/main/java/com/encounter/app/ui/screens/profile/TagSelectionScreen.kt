@@ -144,7 +144,7 @@ fun TagSelectionScreenContent(
                                 fontFamily = FontFamily(Font(R.font.dot_font))
                             ),
                             // ▼ 修正: Theme.kt の onSurface を使用
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = Color(0xFF3E2723),
                             textAlign = TextAlign.Center
                         )
 
@@ -155,7 +155,7 @@ fun TagSelectionScreenContent(
                             text = "あなたの興味ある趣味を選んでください",
                             style = MaterialTheme.typography.bodySmall,
                             // ▼ 修正: Theme.kt の onSurface を使用（不透明度はお好みで）
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                            color = Color(0xFF3E2723),
                             textAlign = TextAlign.Center
                         )
                     }
