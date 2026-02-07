@@ -652,46 +652,46 @@ EnCounterはドット絵RPG風のカラーパレットを採用しています�
 
 | 名前 | 色見本 | Hex | 用途 |
 |:--|:--:|:--|:--|
-| `RpgGoldPrimary` | ![#D4A017](https://via.placeholder.com/20/D4A017/000000?text=+) | `#D4A017` | 重要なボタン、強調表示 |
-| `RpgGoldLight` | ![#FFD700](https://via.placeholder.com/20/FFD700/000000?text=+) | `#FFD700` | ハイライト |
-| `RpgGoldDark` | ![#A67C00](https://via.placeholder.com/20/A67C00/000000?text=+) | `#A67C00` | 影 |
+| `RpgGoldPrimary` | ![#D4A017](https://img.shields.io/badge/-D4A017-D4A017?style=flat-square) | `#D4A017` | 重要なボタン、強調表示 |
+| `RpgGoldLight` | ![#FFD700](https://img.shields.io/badge/-FFD700-FFD700?style=flat-square) | `#FFD700` | ハイライト |
+| `RpgGoldDark` | ![#A67C00](https://img.shields.io/badge/-A67C00-A67C00?style=flat-square) | `#A67C00` | 影 |
 
 #### セカンダリカラー
 
 | 名前 | 色見本 | Hex | 用途 |
 |:--|:--:|:--|:--|
-| `RpgGreenSecondary` | ![#558B2F](https://via.placeholder.com/20/558B2F/000000?text=+) | `#558B2F` | すれちがい通信中など肯定的ステータス |
-| `RpgGreenLight` | ![#85BB5C](https://via.placeholder.com/20/85BB5C/000000?text=+) | `#85BB5C` | ライト版 |
+| `RpgGreenSecondary` | ![#558B2F](https://img.shields.io/badge/-558B2F-558B2F?style=flat-square) | `#558B2F` | すれちがい通信中など肯定的ステータス |
+| `RpgGreenLight` | ![#85BB5C](https://img.shields.io/badge/-85BB5C-85BB5C?style=flat-square) | `#85BB5C` | ライト版 |
 
 #### アクション/警告色
 
 | 名前 | 色見本 | Hex | 用途 |
 |:--|:--:|:--|:--|
-| `RpgRedError` | ![#C62828](https://via.placeholder.com/20/C62828/000000?text=+) | `#C62828` | エラー、停止ボタン |
-| `RpgRedLight` | ![#EF5350](https://via.placeholder.com/20/EF5350/000000?text=+) | `#EF5350` | ライト版 |
+| `RpgRedError` | ![#C62828](https://img.shields.io/badge/-C62828-C62828?style=flat-square) | `#C62828` | エラー、停止ボタン |
+| `RpgRedLight` | ![#EF5350](https://img.shields.io/badge/-EF5350-EF5350?style=flat-square) | `#EF5350` | ライト版 |
 
 #### アクセント
 
 | 名前 | 色見本 | Hex | 用途 |
 |:--|:--:|:--|:--|
-| `RpgManaBlue` | ![#1E88E5](https://via.placeholder.com/20/1E88E5/000000?text=+) | `#1E88E5` | リンク、補助情報 |
-| `RetroSuccess` | ![#2ECC71](https://via.placeholder.com/20/2ECC71/000000?text=+) | `#2ECC71` | 成功、稼働中 |
+| `RpgManaBlue` | ![#1E88E5](https://img.shields.io/badge/-1E88E5-1E88E5?style=flat-square) | `#1E88E5` | リンク、補助情報 |
+| `RetroSuccess` | ![#2ECC71](https://img.shields.io/badge/-2ECC71-2ECC71?style=flat-square) | `#2ECC71` | 成功、稼働中 |
 
 #### ライトモード背景
 
 | 名前 | 色見本 | Hex | 用途 |
 |:--|:--:|:--|:--|
-| `RpgParchmentBg` | ![#FDF5E6](https://via.placeholder.com/20/FDF5E6/000000?text=+) | `#FDF5E6` | メイン背景（羊皮紙） |
-| `RpgParchmentSurface` | ![#F0E6D2](https://via.placeholder.com/20/F0E6D2/000000?text=+) | `#F0E6D2` | カード、リスト背景 |
-| `RpgInkText` | ![#3E2723](https://via.placeholder.com/20/3E2723/000000?text=+) | `#3E2723` | テキスト（焦げ茶） |
+| `RpgParchmentBg` | ![#FDF5E6](https://img.shields.io/badge/-FDF5E6-FDF5E6?style=flat-square) | `#FDF5E6` | メイン背景（羊皮紙） |
+| `RpgParchmentSurface` | ![#F0E6D2](https://img.shields.io/badge/-F0E6D2-F0E6D2?style=flat-square) | `#F0E6D2` | カード、リスト背景 |
+| `RpgInkText` | ![#3E2723](https://img.shields.io/badge/-3E2723-3E2723?style=flat-square) | `#3E2723` | テキスト（焦げ茶） |
 
 #### ダークモード背景
 
 | 名前 | 色見本 | Hex | 用途 |
 |:--|:--:|:--|:--|
-| `RpgDungeonBg` | ![#1A1B26](https://via.placeholder.com/20/1A1B26/000000?text=+) | `#1A1B26` | メイン背景（深夜洞窟） |
-| `RpgStoneSurface` | ![#2F3242](https://via.placeholder.com/20/2F3242/000000?text=+) | `#2F3242` | カード、リスト背景（石壁） |
-| `RpgMoonText` | ![#E0E0E0](https://via.placeholder.com/20/E0E0E0/000000?text=+) | `#E0E0E0` | テキスト（月明かり） |
+| `RpgDungeonBg` | ![#1A1B26](https://img.shields.io/badge/-1A1B26-1A1B26?style=flat-square) | `#1A1B26` | メイン背景（深夜洞窟） |
+| `RpgStoneSurface` | ![#2F3242](https://img.shields.io/badge/-2F3242-2F3242?style=flat-square) | `#2F3242` | カード、リスト背景（石壁） |
+| `RpgMoonText` | ![#E0E0E0](https://img.shields.io/badge/-E0E0E0-E0E0E0?style=flat-square) | `#E0E0E0` | テキスト（月明かり） |
 
 ### テーマ設定
 
