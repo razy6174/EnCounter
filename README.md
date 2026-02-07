@@ -6,6 +6,7 @@
   [![Kotlin](https://img.shields.io/badge/Kotlin-0095D5?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
   [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
   [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
+
   
   **「その場所、その瞬間、その気分」を共有する、一期一会のデジタルすれちがい通信**
 
@@ -34,12 +35,23 @@
 
 - [🎉 スマプロハッカソン 2026 🎉](#-スマプロハッカソン-2026-)
 - [目次](#目次)
+- [開発メンバー](#開発メンバー)
 - [製品概要](#製品概要)
 - [技術仕様書](#技術仕様書)
 - [開発技術](#開発技術)
 - [開発過程（生成AIの活用について）](#開発過程生成aiの活用について)
 - [UI・デザイン](#uiデザイン)
 - [更新履歴](#更新履歴)
+
+---
+
+## 開発メンバー
+
+| 名前 | 担当 | GitHub |
+| :--- | :--- | :--- |
+| **久米 (Kume)** | **Backend / Logic**<br>アーキテクチャ設計、BLE通信、Firebase連携 | [@PartnerGitHubID](https://github.com/Soki0909) |
+| **昆野 (Konno)** | **Frontend / UI**<br>画面設計、Compose実装、デザイン | [@MyGitHubID](https://github.com/razy6174) |
+
 
 ---
 
@@ -466,4 +478,6 @@ EnCounterは**ドット絵RPG風のデザインシステム**を採用し、「�
 | :--------- | :--------- | :--------------------------------------------- |
 | 2026-02-06 | 1.0.0      | 初版README作成、バックエンド仕様書追加         |
 | 2026-02-06 | 1.0.1      | UI・デザインセクション追加、スクリーンショット掲載 |
-| 2026-02-06 | 1.0.2      | フロントエンド仕様書追加、READMEのUI詳細を仕様書へ移管 || 2026-02-06 | 1.1.0      | スマプロハッカソン 2026 最優秀賞受賞情報追加、目次構成改善 |
+| 2026-02-06 | 1.0.2      | フロントエンド仕様書追加、READMEのUI詳細を仕様書へ移管 |
+| 2026-02-06 | 1.1.0      | スマプロハッカソン 2026 最優秀賞受賞情報追加、目次構成改善 |
+| 2026-02-07 | 1.1.1      | 開発メンバー情報追加 |
