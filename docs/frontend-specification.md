@@ -55,7 +55,7 @@ flowchart TB
         SettingsVM[SettingsViewModel]
     end
     
-    subgraph Theme["Design System"]
+    subgraph DesignSystem["Design System"]
         Color[Color.kt<br/>RPGカラーパレット]
         Type[Type.kt<br/>ドットフォント]
         Theme[Theme.kt<br/>テーマ定義]
@@ -70,7 +70,7 @@ flowchart TB
     Chat --> ChatVM
     Settings --> SettingsVM
     
-    UI --> Theme
+    UI --> DesignSystem
 ```
 
 ### 主要機能
@@ -209,6 +209,14 @@ stateDiagram-v2
     UserDetail --> MatchList: 戻る
     Chat --> UserDetail: 戻る
 ```
+
+### アプリ使用の流れ（全体図）
+
+<div align="center">
+<img src="../assets/images/アプリ使用の流れ.PNG" width="700" alt="アプリ使用の流れ">
+</div>
+
+EnCounterの主要な画面遷移とユーザージャーニーを示した図です。プロフィール設定からマッチング、チャットまでの一連の流れが視覚的に理解できます。
 
 ---
 
@@ -351,6 +359,18 @@ sealed class RadarUiEvent {
     data class ShowError(val message: String) : RadarUiEvent()
 }
 ```
+
+### 検知モード（通常モード vs ステルスモード）
+
+<div align="center">
+<img src="../assets/images/検知モード.PNG" width="700" alt="検知モード">
+</div>
+
+EnCounterには2つの検知モードがあります：
+- **通常モード**: BLE Advertise（送信）とScan（受信）の両方を行い、お互いに検知できる
+- **ステルスモード**: Scan（受信）のみを行い、自分は見えずに周囲を検知できる
+
+この図は、各モードでのBLE通信の挙動と、検知される範囲を視覚的に示しています。
 
 ---
 
@@ -630,48 +650,48 @@ EnCounterはドット絵RPG風のカラーパレットを採用しています�
 
 #### メインカラー
 
-| 名前 | Hex | 用途 |
-|:--|:--|:--|
-| `RpgGoldPrimary` | `#D4A017` | 重要なボタン、強調表示 |
-| `RpgGoldLight` | `#FFD700` | ハイライト |
-| `RpgGoldDark` | `#A67C00` | 影 |
+| 名前 | 色見本 | Hex | 用途 |
+|:--|:--:|:--|:--|
+| `RpgGoldPrimary` | ![#D4A017](https://via.placeholder.com/20/D4A017/000000?text=+) | `#D4A017` | 重要なボタン、強調表示 |
+| `RpgGoldLight` | ![#FFD700](https://via.placeholder.com/20/FFD700/000000?text=+) | `#FFD700` | ハイライト |
+| `RpgGoldDark` | ![#A67C00](https://via.placeholder.com/20/A67C00/000000?text=+) | `#A67C00` | 影 |
 
 #### セカンダリカラー
 
-| 名前 | Hex | 用途 |
-|:--|:--|:--|
-| `RpgGreenSecondary` | `#558B2F` | すれちがい通信中など肯定的ステータス |
-| `RpgGreenLight` | `#85BB5C` | ライト版 |
+| 名前 | 色見本 | Hex | 用途 |
+|:--|:--:|:--|:--|
+| `RpgGreenSecondary` | ![#558B2F](https://via.placeholder.com/20/558B2F/000000?text=+) | `#558B2F` | すれちがい通信中など肯定的ステータス |
+| `RpgGreenLight` | ![#85BB5C](https://via.placeholder.com/20/85BB5C/000000?text=+) | `#85BB5C` | ライト版 |
 
 #### アクション/警告色
 
-| 名前 | Hex | 用途 |
-|:--|:--|:--|
-| `RpgRedError` | `#C62828` | エラー、停止ボタン |
-| `RpgRedLight` | `#EF5350` | ライト版 |
+| 名前 | 色見本 | Hex | 用途 |
+|:--|:--:|:--|:--|
+| `RpgRedError` | ![#C62828](https://via.placeholder.com/20/C62828/000000?text=+) | `#C62828` | エラー、停止ボタン |
+| `RpgRedLight` | ![#EF5350](https://via.placeholder.com/20/EF5350/000000?text=+) | `#EF5350` | ライト版 |
 
 #### アクセント
 
-| 名前 | Hex | 用途 |
-|:--|:--|:--|
-| `RpgManaBlue` | `#1E88E5` | リンク、補助情報 |
-| `RetroSuccess` | `#2ECC71` | 成功、稼働中 |
+| 名前 | 色見本 | Hex | 用途 |
+|:--|:--:|:--|:--|
+| `RpgManaBlue` | ![#1E88E5](https://via.placeholder.com/20/1E88E5/000000?text=+) | `#1E88E5` | リンク、補助情報 |
+| `RetroSuccess` | ![#2ECC71](https://via.placeholder.com/20/2ECC71/000000?text=+) | `#2ECC71` | 成功、稼働中 |
 
 #### ライトモード背景
 
-| 名前 | Hex | 用途 |
-|:--|:--|:--|
-| `RpgParchmentBg` | `#FDF5E6` | メイン背景（羊皮紙） |
-| `RpgParchmentSurface` | `#F0E6D2` | カード、リスト背景 |
-| `RpgInkText` | `#3E2723` | テキスト（焦げ茶） |
+| 名前 | 色見本 | Hex | 用途 |
+|:--|:--:|:--|:--|
+| `RpgParchmentBg` | ![#FDF5E6](https://via.placeholder.com/20/FDF5E6/000000?text=+) | `#FDF5E6` | メイン背景（羊皮紙） |
+| `RpgParchmentSurface` | ![#F0E6D2](https://via.placeholder.com/20/F0E6D2/000000?text=+) | `#F0E6D2` | カード、リスト背景 |
+| `RpgInkText` | ![#3E2723](https://via.placeholder.com/20/3E2723/000000?text=+) | `#3E2723` | テキスト（焦げ茶） |
 
 #### ダークモード背景
 
-| 名前 | Hex | 用途 |
-|:--|:--|:--|
-| `RpgDungeonBg` | `#1A1B26` | メイン背景（深夜洞窟） |
-| `RpgStoneSurface` | `#2F3242` | カード、リスト背景（石壁） |
-| `RpgMoonText` | `#E0E0E0` | テキスト（月明かり） |
+| 名前 | 色見本 | Hex | 用途 |
+|:--|:--:|:--|:--|
+| `RpgDungeonBg` | ![#1A1B26](https://via.placeholder.com/20/1A1B26/000000?text=+) | `#1A1B26` | メイン背景（深夜洞窟） |
+| `RpgStoneSurface` | ![#2F3242](https://via.placeholder.com/20/2F3242/000000?text=+) | `#2F3242` | カード、リスト背景（石壁） |
+| `RpgMoonText` | ![#E0E0E0](https://via.placeholder.com/20/E0E0E0/000000?text=+) | `#E0E0E0` | テキスト（月明かり） |
 
 ### テーマ設定
 
