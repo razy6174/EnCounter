@@ -8,7 +8,8 @@
   [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
 
   
-  **「その場所、その瞬間、その気分」を共有する、一期一会のデジタルすれちがい通信**
+  **同じ目的で同じ場所にいるのに、誰とも繋がれずに孤独を感じる──**  
+**そんな出会いの機会損失を解消する、ハイパーローカル・すれちがいマッチングアプリ**
 
   <img src="assets\images\app_logo_rect.png" alt="app_logo_rect" width="800">
 
@@ -49,8 +50,8 @@
 
 | 名前 | 担当 | GitHub |
 | :--- | :--- | :--- |
-| **久米 (Kume)** | **Backend / Logic**<br>アーキテクチャ設計、BLE通信、Firebase連携 | [@PartnerGitHubID](https://github.com/Soki0909) |
-| **昆野 (Konno)** | **Frontend / UI**<br>画面設計、Compose実装、デザイン | [@MyGitHubID](https://github.com/razy6174) |
+| **久米 (Kume)** | **Backend / Logic**<br>アーキテクチャ設計、BLE通信、Firebase連携 | [@KumeGitHubID](https://github.com/Soki0909) |
+| **昆野 (Konno)** | **Frontend / UI**<br>画面設計、Compose実装、デザイン | [@KonnoGitHubID](https://github.com/razy6174) |
 
 
 ---
